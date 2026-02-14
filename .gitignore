@@ -1,0 +1,24 @@
+# Virtual Environment
+.venv/
+.env
+
+# PyCharm specific settings
+.idea/
+
+# Python cache
+__pycache__/
+
+# Database connection
+config/database.ini
+
+# Data files
+data/raw/
+data/processed/
+
+# Dependencies lock
+poetry.lock
+
+#Other files
+src/get_headers.py
+src/network.py
+etl/extract/product_crawler_bak.py
