@@ -12,8 +12,8 @@ __pycache__/
 config/database.ini
 
 # Data files
-data/raw/
-data/processed/
+data/raw/*
+data/processed/*
 
 # Dependencies lock
 poetry.lock
