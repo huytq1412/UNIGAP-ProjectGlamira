@@ -24,14 +24,9 @@ ip_data_path = os.environ.get('IP_DATA_PATH')
 
 ip_filename = get_filename(ip_data_path, 'IP_DATA_PATH')
 
-# --- 1. DATA QUALITY: NORMALIZE & VALIDATE ---
+# DATA QUALITY (CHUẨN HÓA & VALIDATE)
 def normalize_data(ip_str, record):
-    """
-    Chuyển đổi object của IP2Location thành dict chuẩn.
-    Xử lý các giá trị None, whitespace.
-    """
-    # IP2Location thường trả về '-' hoặc 'This parameter is unavailable...' nếu thiếu data
-    # Ta sẽ giữ nguyên raw text ở bước này, xử lý logic ở bước validate
+    # Hàm chuẩn hóa dữ liệu trước khi lưu
     return {
         'ip': str(ip_str).strip(),
         'country_short': str(record.country_short if record.country_short else '').strip(),
@@ -41,17 +36,15 @@ def normalize_data(ip_str, record):
     }
 
 def validate_data(item):
-    """
-    Kiểm tra xem thông tin vị trí có hợp lệ không.
-    Trả về: (Bool, Reason)
-    """
+    # Kiểm tra xem thông tin vị trí có hợp lệ không.
+
     if not item['ip']:
         return False, 'missing_ip'
 
-    # Định nghĩa các giá trị được coi là "Thiếu"
+    # Định nghĩa các giá trị được coi là không đủ tiêu chuẩn
     missing_markers = ['-', '', 'n/a', 'N/A']
 
-    # Logic Strict: Phải có đủ Country Short, Region VÀ City mới tính là Valid
+    # Logic: Phải có đủ Country Short, Region VÀ City mới tính là Valid
     if (item['country_short'] in missing_markers or item['country_long'] in missing_markers or
         item['region'] in missing_markers or item['city'] in missing_markers):
         return False, 'missing_location_info'
@@ -62,16 +55,19 @@ def validate_data(item):
     return True, 'valid'
 
 def process_ip_locations():
+    # Hàm xử lý dữ liệu IP và đẩy vào MongoDB
+
     # Kiểm tra file BIN có tồn tại không
     if not os.path.exists(ip_filename):
         print(f"Lỗi: Không tìm thấy file '{ip_filename}'.")
         return
 
-    # 1. Connect to MongoDB
+    # Connect to MongoDB
     db = get_database()
     src_collection = db[SOURCE_COLLECTION]
     tgt_collection = db[TARGET_COLLECTION]
 
+    # Tạo index cho collection (nếu chưa tồn tại)
     print(f"Đang kiểm tra và tạo Index cho trường {IP_FIELD_NAME}...")
     src_collection.create_index([(IP_FIELD_NAME, 1)])
 
@@ -84,7 +80,8 @@ def process_ip_locations():
     # ip_count = len(ip_unique)
     # print(f"=> Tìm thấy {ip_count} IP duy nhất.")
 
-    # Bước 2a: Đếm tổng số IP duy nhất trước (để làm stats)
+    # Lấy ra danh sách các unique IP cần quét
+    # Đếm tổng số IP duy nhất trước (để làm stats)
     count_pipeline = [
         {"$group": {"_id": f"${IP_FIELD_NAME}"}},
         {"$count": "total_ips"}
@@ -95,13 +92,12 @@ def process_ip_locations():
 
     print(f"=> Tìm thấy {ip_count} IP duy nhất.")
 
-    # Bước 2b: Tạo cursor để duyệt dữ liệu (Stream)
+    # Tạo cursor để duyệt dữ liệu
     data_pipeline = [
         {"$group": {"_id": f"${IP_FIELD_NAME}"}}
     ]
     ip_unique = src_collection.aggregate(data_pipeline, allowDiskUse=True)
 
-    # 3. Use ip2location to get location data
     # Load dữ liệu IP từ file BIN
     try:
         ip_data = IP2Location.IP2Location(ip_filename)
@@ -118,7 +114,6 @@ def process_ip_locations():
         'err_exception': 0
     }
 
-    # 4. Store results in new collection Or CSV file
     # Tạo một danh sách rỗng để chứa các data lấy được từ địa chỉ ip
     ip_data_list = []
     inserted_count = 0
@@ -126,7 +121,6 @@ def process_ip_locations():
 
     print(f"\n{'=' * 40}")
     print(f"BẮT ĐẦU XỬ LÝ IP")
-    # In header log mới
     print(f"{'Processed':<10} | {'Pending':<10} | {'Success':<10} | {'Missing IP':<10} | {'Missing Loc':<10} | {'Invalid':<10}")
     print("-" * 80)
     print(f"{0:<10} | {stats['total']:<10} | {stats['success']:<10} | {stats['dq_missing_ip']:<10} | {stats['dq_missing_location_info']:<10} | {stats['dq_invalid_ip']:<10}")
@@ -134,10 +128,7 @@ def process_ip_locations():
     for ip in ip_unique:
         stats['processed'] += 1
 
-        # if not ip:
-        #     continue
-
-        # SỬA Ở ĐÂY: Lấy chính xác chuỗi IP ra khỏi dictionary của MongoDB
+        # Lấy chính xác chuỗi IP ra khỏi dictionary của MongoDB
         ip_str = ip.get('_id')
 
         if not ip_str:
@@ -146,7 +137,7 @@ def process_ip_locations():
 
         try:
             document = ip_data.get_all(ip_str)
-
+            # Chuẩn hóa
             normalized_item = normalize_data(ip_str, document)
             # Kiểm tra
             is_valid, reason = validate_data(normalized_item)

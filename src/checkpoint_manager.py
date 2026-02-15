@@ -1,9 +1,25 @@
-import os
 import threading
+import os
+from dotenv import load_dotenv
+from src.get_data_from_env import get_filename
+
+# Lấy thư mục file hiện tại
+current_dir = os.path.dirname(__file__)
+
+# Lấy thư mục gốc của project
+project_dir = os.path.abspath(os.path.join(current_dir, '..'))
+
+# Lấy thư mục file .env
+env_path = os.path.join(project_dir, '.env')
+
+load_dotenv(dotenv_path=env_path)
+
+SUCCESS_FILE_PATH = os.environ.get('SUCCESS_FILE_PATH')
+ERROR_404_FILE_PATH = os.environ.get('ERROR_404_FILE_PATH')
 
 # Tên file lưu trữ
-SUCCESS_FILE = '/home/huytq/UNIGAP/ProjectGlamira/data/processed/success_productid.txt'
-ERROR_404_FILE = '/home/huytq/UNIGAP/ProjectGlamira/data/processed/error_404_productid.txt'
+SUCCESS_FILE = get_filename(SUCCESS_FILE_PATH, 'SUCCESS_FILE_PATH')
+ERROR_404_FILE = get_filename(ERROR_404_FILE_PATH, 'ERROR_404_FILE_PATH')
 
 # Tạo khóa để tránh việc 2 luồng ghi file cùng lúc gây lỗi (Race condition)
 file_lock = threading.Lock()

@@ -52,11 +52,12 @@ product_name_path = os.environ.get('PRODUCT_NAME_PATH')
 OUTPUT_CSV = get_filename(product_name_path, 'PRODUCT_NAME_PATH')
 
 def get_total():
+    # Hàm lấy tổng cộng bản ghi thỏa mãn điều kiện cần crawl
     db = get_database()
     src_collection = db[SOURCE_COLLECTION]
 
-    # 1. Chỉ lấy những field thực sự cần thiết (Projection)
-    # _id: 0 nghĩa là không lấy _id (tiết kiệm băng thông)
+    # Chỉ lấy những field thực sự cần thiết
+    # _id: 0 nghĩa là không lấy _id
     field_group = {
         "collection": 1,
         "product_id": 1,
@@ -64,7 +65,7 @@ def get_total():
         "_id": 0
     }
 
-    # 2. Lọc ngay từ đầu
+    # Lọc ngay từ đầu
     condition_group = {"collection": {"$in": GROUP1 + GROUP2}}
 
     # Lấy con trỏ (cursor) về, chưa tải data ngay
@@ -72,17 +73,15 @@ def get_total():
 
     products_set = set()
 
-    # 3. Xử lý logic bằng Python (Dễ đọc, dễ sửa)
     for doc in cursor:
         productid = None
         col_type = doc.get("collection")
 
-        # Logic if/else rõ ràng của Python
         if col_type in GROUP1:
-            # Ưu tiên product_id, nếu không có thì lấy viewing
+            # Ưu tiên product_id, nếu không có thì lấy viewing_product_id
             productid = doc.get("product_id") or doc.get("viewing_product_id")
         else:
-            # Group 2
+            # Lấy viewing_product_id
             productid = doc.get("viewing_product_id")
 
         if productid:
@@ -91,6 +90,7 @@ def get_total():
     return len(products_set)
 
 def get_product(existing_products_set):
+    # Hàm lấy các dữ liệu product thỏa mãn điều kiện
     db = get_database()
     src_collection = db[SOURCE_COLLECTION]
     products_set = set()
@@ -108,9 +108,9 @@ def get_product(existing_products_set):
         product_id = doc.get('product_id') or doc.get('viewing_product_id')
         url = doc.get('current_url')
 
-        # --- LOGIC LỌC CHECKPOINT ---
+        # LỌC CHECKPOINT: Bỏ qua nếu đã có trong file success productid
         if product_id and product_id in existing_products_set:
-            continue  # Bỏ qua nếu đã có trong file txt
+            continue
 
         if product_id and url and isinstance(url, str) and product_id not in products_set:
             products_set.add(product_id)
@@ -129,7 +129,7 @@ def get_product(existing_products_set):
         product_id = doc.get('viewing_product_id')
         url = doc.get('referrer_url')
 
-        # --- LOGIC LỌC CHECKPOINT ---
+        # LỌC CHECKPOINT: Bỏ qua nếu đã có trong file success productid
         if product_id and product_id in existing_products_set:
             continue
 
@@ -140,6 +140,8 @@ def get_product(existing_products_set):
             yield {'product_id': product_id, 'url': url}
 
 def name_scrapping(item):
+    # Hàm crawl dữ liệu từ url và xử lý theo từng loại
+
     # Giúp request không bị gửi dồn dập cùng 1 lúc -> Server đỡ nghi ngờ
     # time.sleep(random.uniform(0.5, 1))
 
@@ -147,7 +149,7 @@ def name_scrapping(item):
     url = item['url']
 
     session = requests.Session()
-    # # Chọn ngẫu nhiên 1 kiểu trình duyệt
+    # Chọn ngẫu nhiên 1 kiểu trình duyệt
     browser_type = random.choice(BROWSER_LIST)
 
     # Cấu hình số lần thử lại
@@ -155,14 +157,13 @@ def name_scrapping(item):
 
     for attempt in range(max_retry):
         try:
-            # Gọi request (Nếu lỗi 5xx hoặc mất mạng, Session Adapter sẽ tự retry 3 lần ở dòng này rồi mới trả kết quả)
             res = session.get(
                 url,
                 timeout=10,
                 impersonate=browser_type,
                 verify=False
             )
-            # --- TRƯỜNG HỢP 1: THÀNH CÔNG (200) ---
+            # TRƯỜNG HỢP 1: THÀNH CÔNG (200)
             if res.status_code == 200:
                 soup = BeautifulSoup(res.text, "lxml")
                 product_name = "Unknown name"
@@ -182,11 +183,12 @@ def name_scrapping(item):
                 return {'product_id': product_id, 'product_name': product_name, 'url': url,
                         'status': 'success', 'http_code': 200, 'error_msg': ''}
 
-            # --- TRƯỜNG HỢP 2: LỖI 404, 403 -> KHÔNG RETRY
+            # TRƯỜNG HỢP 2: LỖI 404 -> KHÔNG RETRY
             elif res.status_code == 404:
                 return {'product_id': product_id, 'url': url, 'status': 'err_404',
                         'http_code': 404, 'error_msg': 'Page Not Found'}
 
+            # TRƯỜNG HỢP 3: LỖI 403 -> RETRY và đổi sang browser khác để thử lại (tránh bị web chặn)
             elif res.status_code == 403:
                 if attempt < max_retry - 1:
                     new_browser = random.choice([b for b in BROWSER_LIST if b != browser_type])
@@ -200,7 +202,7 @@ def name_scrapping(item):
                 return {'product_id': product_id, 'url': url, 'status': 'err_403',
                         'http_code': 403, 'error_msg': 'Forbidden'}
 
-            # --- TRƯỜNG HỢP 3: LỖI 429 (RATE LIMIT) -> CẦN RETRY
+            # TRƯỜNG HỢP 4: LỖI 429 -> SLEEP + RETRY
             elif res.status_code == 429:
                 print('err_429')
                 print(f"429 Rate Limit - ID {product_id}. Sleeping 5s... (Attempt {attempt + 1})")
@@ -211,18 +213,19 @@ def name_scrapping(item):
                 return {'product_id': product_id, 'url': url, 'status': 'err_429',
                         'http_code': 429, 'error_msg': 'Rate limit'}
 
+            # TRƯỜNG HỢP 5: LỖI 5xx -> RETRY
             elif res.status_code in range (500,600):
                 # Đây chính là thay thế cho status_forcelist của HTTPAdapter
                 print(f"Lỗi Server {res.status_code} - Retry...")
                 if attempt < max_retry - 1:
                     time.sleep(2)
-                    continue  # Thử lại
+                    continue
 
                 return {'product_id': product_id, 'url': url, 'status': 'err_5xx',
                         'http_code': res.status_code, 'error_msg': f'HTTP {res.status_code}'}
 
         except RequestsError as e:
-            # --- ĐÂY LÀ CHỖ THAY THẾ CHO HTTPADAPTER (Lỗi mất mạng) ---
+            # LỖI MẠNG KHI REQUEST
             # print(f"Lỗi kết nối (Mất mạng/DNS): {e}")
             if attempt < max_retry - 1:
                 time.sleep(2)
@@ -230,7 +233,7 @@ def name_scrapping(item):
             return {'product_id': product_id, 'url': url, 'status': 'err_network', 'error_msg': str(e)}
 
         except Exception as e:
-            # Lỗi ngoại lệ
+            # LỖI KHÁC
             if attempt < max_retry - 1:
                 time.sleep(2)
                 continue
@@ -245,16 +248,15 @@ def name_scrapping(item):
 
 # DATA QUALITY (CHUẨN HÓA & VALIDATE)
 def normalize_data(raw_item):
-    """Chuẩn hóa dữ liệu trước khi lưu"""
+    # Hàm chuẩn hóa dữ liệu trước khi lưu
     return {
         'product_id': str(raw_item.get('product_id', '')).strip(),
         'product_name': str(raw_item.get('product_name', '')).strip(),
         'url': str(raw_item.get('url', '')).strip()
     }
 
-
 def validate_data(item):
-    """Kiểm tra dữ liệu sạch"""
+    # Hàm kiểm tra dữ liệu sạch
     if not item['product_id']:
         return False, 'missing_id'
     # Tên sản phẩm phải có và không được là "Unknown name"
@@ -264,9 +266,9 @@ def validate_data(item):
         return False, 'missing_url'
     return True, 'valid'
 
-
-# Hàm xử lý danh sách kết quả (Dùng chung cho cả batch và phần dư)
 def process_results(results_list, csv_writer, stats):
+    # Hàm xử lý danh sách kết quả (Dùng chung cho cả batch và phần dư)
+
     insert_mongo_batch = []
     for result in results_list:
         # 1. Ghi log CSV (Ghi tất cả kết quả, kể cả lỗi)
@@ -283,11 +285,10 @@ def process_results(results_list, csv_writer, stats):
         else:
             stats['err_other'] += 1
 
-        # --- [MỚI] 3. GHI CHECKPOINT (ATOMIC WRITE) ---
-        # Ghi ngay lập tức ID này vào file txt tương ứng
+        # 3. Xử lý CHECKPOINT: Ghi ngay lập tức productid này vào file txt tương ứng
         save_checkpoint(result['product_id'], result['status'])
 
-        # 3. Xử lý Data Quality & Chuẩn bị ghi Mongo
+        # 4. Xử lý Data Quality & chuẩn bị ghi vào MongoDB
         if status_key == 'success':
             # Chuẩn hóa
             normalized_item = normalize_data(result)
@@ -304,11 +305,9 @@ def process_results(results_list, csv_writer, stats):
     return insert_mongo_batch
 
 def run_crawler_round(round_number, stats, existing_products_set, start_time):
-    src_collection = db[SOURCE_COLLECTION]
-    tgt_collection = db[TARGET_COLLECTION]
+    # Hàm xử lý crawl và lưu dữ liệu lặp lại theo từng round
 
-    # # Xóa dữ liệu cũ trong bảng kết quả (nếu có) để chạy lại cho sạch
-    # tgt_collection.delete_many({})
+    tgt_collection = db[TARGET_COLLECTION]
 
     products_list = []
     batch_start_time = time.time()
@@ -339,21 +338,17 @@ def run_crawler_round(round_number, stats, existing_products_set, start_time):
                 if len(products_list) >= BATCH_SIZE:
                     results = list(executor.map(name_scrapping, products_list))
 
-                    product_data_list = []
-                    # print(4)
                     # Gọi hàm xử lý trung tâm
                     insert_mongo_batch = process_results(results, writer, stats)
 
                     # Insert vào Mongo (Chỉ data sạch)
                     if insert_mongo_batch:
                         try:
-                            tgt_collection.insert_many(insert_mongo_batch)
+                            tgt_collection.insert_many(insert_mongo_batch, ordered=False)
                         except Exception as e:
                             print(f"Đây là lỗi khi insert vào MONGO: {e}")
-                            # Log nhẹ nếu có lỗi insert (thường là duplicate key nếu có index)
-                            pass
 
-                    # --- XỬ LÝ LOGGING ---
+                    # Xử lý LOGGING
                     current_time = time.time()
                     batch_duration = current_time - batch_start_time
                     batch_start_time = current_time
@@ -379,12 +374,11 @@ def run_crawler_round(round_number, stats, existing_products_set, start_time):
                 # Insert vào Mongo (Chỉ data sạch)
                 if insert_mongo_batch:
                     try:
-                        tgt_collection.insert_many(insert_mongo_batch)
+                        tgt_collection.insert_many(insert_mongo_batch, ordered=False)
                     except Exception as e:
-                        # Log nhẹ nếu có lỗi insert (thường là duplicate key nếu có index)
-                        pass
+                        print(f"Đây là lỗi khi insert vào MONGO: {e}")
 
-                # XỬ LÝ LOGGING lô cuối
+                # Xử lý LOGGING lô cuối
                 current_time = time.time()
                 batch_duration = current_time - batch_start_time
                 chunk_num = (stats['processed'] // BATCH_SIZE) + 1
@@ -425,6 +419,16 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
+    src_collection = db[SOURCE_COLLECTION]
+
+    print("--> Đang kiểm tra và tạo Index tối ưu (Cnếu chưa tồn tại)...")
+    # Tạo Compound Index: Giúp MongoDB lấy dữ liệu trực tiếp từ Index (RAM)
+    src_collection.create_index([
+        ("collection", 1),
+        ("product_id", 1),
+        ("viewing_product_id", 1)
+    ])
+
     # --- BIẾN THỐNG KÊ CHI TIẾT ---
     stats = {
         'total': 0,  # Tổng số bản ghi
@@ -445,7 +449,6 @@ if __name__ == "__main__":
 
     # VÒNG LẶP TOÀN CỤC (GLOBAL RETRY)
     for i in range(1, MAX_RETRY_ROUNDS + 1):
-        # --- [MỚI] 1. LOAD CHECKPOINT ---
         # Đọc tất cả ID đã làm xong từ trước
         existing_products_set = load_processed_ids()
 
