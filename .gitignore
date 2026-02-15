@@ -12,8 +12,8 @@ __pycache__/
 config/database.ini
 
 # Data files
-data/raw/*
-data/processed/*
+data/raw/
+data/processed/
 
 # Dependencies lock
 poetry.lock
@@ -21,4 +21,4 @@ poetry.lock
 #Other files
 src/get_headers.py
 src/network.py
-etl/extract/product_crawler_bak.py
+etl/extract/product_crawler_backup.py

@@ -56,7 +56,7 @@ def validate_data(item):
         item['region'] in missing_markers or item['city'] in missing_markers):
         return False, 'missing_location_info'
 
-    if item['country_long'] == 'Invalid IP address':
+    if item['country_long'].upper() == 'INVALID IP ADDRESS':
         return False, 'invalid_ip'
 
     return True, 'valid'
@@ -71,6 +71,9 @@ def process_ip_locations():
     db = get_database()
     src_collection = db[SOURCE_COLLECTION]
     tgt_collection = db[TARGET_COLLECTION]
+
+    print(f"Đang kiểm tra và tạo Index cho trường {IP_FIELD_NAME}...")
+    src_collection.create_index([(IP_FIELD_NAME, 1)])
 
     # Xóa dữ liệu cũ trong bảng kết quả (nếu có) để chạy lại cho sạch
     tgt_collection.delete_many({})
@@ -131,13 +134,20 @@ def process_ip_locations():
     for ip in ip_unique:
         stats['processed'] += 1
 
-        if not ip:
+        # if not ip:
+        #     continue
+
+        # SỬA Ở ĐÂY: Lấy chính xác chuỗi IP ra khỏi dictionary của MongoDB
+        ip_str = ip.get('_id')
+
+        if not ip_str:
+            stats['dq_missing_ip'] += 1
             continue
 
         try:
-            document = ip_data.get_all(ip)
+            document = ip_data.get_all(ip_str)
 
-            normalized_item = normalize_data(ip, document)
+            normalized_item = normalize_data(ip_str, document)
             # Kiểm tra
             is_valid, reason = validate_data(normalized_item)
 
