@@ -23,7 +23,7 @@ UNIGAP-ProjectGlamira/
 ├── etl/
 │   ├── extract/
 │   │   ├── __init__.py
-│   │   └── product_crawler.py       # Main script: Cào tên sản phẩm & vượt Anti-Bot
+│   │   └── product_crawler.py       # Script crawl tên sản phẩm 
 │   ├── load/
 │   │   └── __init__.py
 │   └── transform/
@@ -33,9 +33,9 @@ UNIGAP-ProjectGlamira/
 │   ├── __init__.py
 │   ├── checkpoint_manager.py        # Quản lý đọc/ghi Checkpoint (Tránh crawl lại)
 │   └── get_data_from_env.py         # Đọc cấu hình đường dẫn từ file .env
-├── tests/                           # Thư mục chứa Unit test
+├── tests/                           
 │   └── __init__.py
-├── .env                             # File chứa biến môi trường (Credentials, Path)
+├── .env                             # File chứa biến môi trường
 ├── .gitignore                       # File bỏ qua các file không cần push lên Git
 ├── poetry.lock                      # Khóa phiên bản các thư viện dependencies
 ├── pyproject.toml                   # Cấu hình dự án & danh sách thư viện (Poetry)
