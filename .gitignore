@@ -20,5 +20,7 @@ poetry.lock
 
 #Other files
 src/get_headers.py
+src/get_total.py
 src/network.py
 etl/extract/product_crawler_backup.py
+etl/extract/product_crawler_bak.py

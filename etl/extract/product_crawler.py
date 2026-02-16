@@ -102,9 +102,9 @@ def get_product(existing_products_set):
     yielded_count = 0
 
     for doc in doc_group1:
-        if yielded_count >= 1000:
-            print(f"🛑 Đã lấy đủ 1000 bản ghi để test. Dừng generator.")
-            break
+        # if yielded_count >= 1000:
+        #     print(f"🛑 Đã lấy đủ 1000 bản ghi để test. Dừng generator.")
+        #     break
         product_id = doc.get('product_id') or doc.get('viewing_product_id')
         url = doc.get('current_url')
 
@@ -114,8 +114,8 @@ def get_product(existing_products_set):
 
         if product_id and url and isinstance(url, str) and product_id not in products_set:
             products_set.add(product_id)
-            # Nếu qua được hết các cửa ải thì mới yield và tăng biến đếm
-            yielded_count += 1
+            # # Nếu qua được hết các cửa ải thì mới yield và tăng biến đếm
+            # yielded_count += 1
             yield {'product_id': product_id, 'url': url}
 
     condition_group2 = {"collection": {"$in": GROUP2}}
@@ -123,9 +123,9 @@ def get_product(existing_products_set):
     doc_group2 = src_collection.find(condition_group2, field_group2)
 
     for doc in doc_group2:
-        if yielded_count >= 1000:
-            print(f"🛑 Đã lấy đủ 1000 bản ghi để test. Dừng generator.")
-            break
+        # if yielded_count >= 1000:
+        #     print(f"🛑 Đã lấy đủ 1000 bản ghi để test. Dừng generator.")
+        #     break
         product_id = doc.get('viewing_product_id')
         url = doc.get('referrer_url')
 
@@ -135,15 +135,15 @@ def get_product(existing_products_set):
 
         if product_id and url and isinstance(url, str) and product_id not in products_set:
             products_set.add(product_id)
-            # Nếu qua được hết các cửa ải thì mới yield và tăng biến đếm
-            yielded_count += 1
+            # # Nếu qua được hết các cửa ải thì mới yield và tăng biến đếm
+            # yielded_count += 1
             yield {'product_id': product_id, 'url': url}
 
 def name_scrapping(item):
     # Hàm crawl dữ liệu từ url và xử lý theo từng loại
 
     # Giúp request không bị gửi dồn dập cùng 1 lúc -> Server đỡ nghi ngờ
-    # time.sleep(random.uniform(0.5, 1))
+    # time.sleep(random.uniform(3, 5))
 
     product_id = item['product_id']
     url = item['url']
@@ -151,6 +151,23 @@ def name_scrapping(item):
     session = requests.Session()
     # Chọn ngẫu nhiên 1 kiểu trình duyệt
     browser_type = random.choice(BROWSER_LIST)
+
+    # Đây là những IP miễn phí và hạn mức sử dụng, hãy sử dụng IP của riêng mình
+    proxy_list = [
+        "http://qxpkccco:bfy3pd1qeiyi@31.59.20.176:6754",
+        "http://qxpkccco:bfy3pd1qeiyi@23.95.150.145:6114",
+        "http://qxpkccco:bfy3pd1qeiyi@198.23.239.134:6540",
+        "http://qxpkccco:bfy3pd1qeiyi@45.38.107.97:6014",
+        "http://qxpkccco:bfy3pd1qeiyi@107.172.163.27:6543",
+        "http://qxpkccco:bfy3pd1qeiyi@198.105.121.200:6462",
+        "http://qxpkccco:bfy3pd1qeiyi@64.137.96.74:6641",
+        "http://qxpkccco:bfy3pd1qeiyi@216.10.27.159:6837",
+        "http://qxpkccco:bfy3pd1qeiyi@23.26.71.145:5628",
+        "http://qxpkccco:bfy3pd1qeiyi@23.229.19.94:8689",
+    ]
+    # Chọn ngẫu nhiên 1 cái proxy để dùng cho request này
+    random_proxy = random.choice(proxy_list)
+    proxies = {"http": random_proxy, "https": random_proxy}
 
     # Cấu hình số lần thử lại
     max_retry = 3
@@ -161,6 +178,7 @@ def name_scrapping(item):
                 url,
                 timeout=10,
                 impersonate=browser_type,
+                proxies=proxies,
                 verify=False
             )
             # TRƯỜNG HỢP 1: THÀNH CÔNG (200)
@@ -421,7 +439,7 @@ if __name__ == "__main__":
 
     src_collection = db[SOURCE_COLLECTION]
 
-    print("--> Đang kiểm tra và tạo Index tối ưu (Cnếu chưa tồn tại)...")
+    print("--> Đang kiểm tra và tạo Index tối ưu (nếu chưa tồn tại)...")
     # Tạo Compound Index: Giúp MongoDB lấy dữ liệu trực tiếp từ Index (RAM)
     src_collection.create_index([
         ("collection", 1),
