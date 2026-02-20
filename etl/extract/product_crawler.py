@@ -95,49 +95,66 @@ def get_product(existing_products_set):
     src_collection = db[SOURCE_COLLECTION]
     products_set = set()
 
-    condition_group1 = {"collection": {"$in": GROUP1}}
+    # Chuyển set các ID đã cào thành list để nhét vào query của MongoDB
+    existing_list = list(existing_products_set)
+
+    # Ép MongoDB lọc bỏ những ID đã cào
+    condition_group1 = {
+        "collection": {"$in": GROUP1},
+        "product_id": {"$nin": existing_list},  # Không lấy ID đã cào
+        "viewing_product_id": {"$nin": existing_list}  # Không lấy ID đã cào
+    }
+
     field_group1 = {"product_id": 1, "viewing_product_id": 1, "current_url": 1}
-    doc_group1 = src_collection.find(condition_group1, field_group1)
+    doc_group1 = src_collection.find(condition_group1, field_group1, no_cursor_timeout=True).batch_size(1000)
 
-    yielded_count = 0
+    try:
+        for doc in doc_group1:
+            product_id = doc.get('product_id') or doc.get('viewing_product_id')
+            url = doc.get('current_url')
 
-    for doc in doc_group1:
-        # if yielded_count >= 1000:
-        #     print(f"🛑 Đã lấy đủ 1000 bản ghi để test. Dừng generator.")
-        #     break
-        product_id = doc.get('product_id') or doc.get('viewing_product_id')
-        url = doc.get('current_url')
+            # Kiểm tra và bỏ qua URL test ngay từ đầu
+            if url and ("stage.glamira" in str(url) or "test.glamira" in str(url)):
+                continue
 
-        # LỌC CHECKPOINT: Bỏ qua nếu đã có trong file success productid
-        if product_id and product_id in existing_products_set:
-            continue
+            # LỌC CHECKPOINT: Bỏ qua nếu đã có trong file success productid
+            if product_id and product_id in existing_products_set:
+                continue
 
-        if product_id and url and isinstance(url, str) and product_id not in products_set:
-            products_set.add(product_id)
-            # # Nếu qua được hết các cửa ải thì mới yield và tăng biến đếm
-            # yielded_count += 1
-            yield {'product_id': product_id, 'url': url}
+            if product_id and url and isinstance(url, str) and product_id not in products_set:
+                products_set.add(product_id)
+                yield {'product_id': product_id, 'url': url}
+    finally:
+        doc_group1.close()
 
-    condition_group2 = {"collection": {"$in": GROUP2}}
+
+    # Ép MongoDB lọc bỏ những ID đã cào
+    condition_group2 = {
+        "collection": {"$in": GROUP2},
+        "viewing_product_id": {"$nin": existing_list}  # Không lấy ID đã cào
+    }
+
     field_group2 = {"viewing_product_id": 1, "referrer_url": 1}
-    doc_group2 = src_collection.find(condition_group2, field_group2)
+    doc_group2 = src_collection.find(condition_group2, field_group2, no_cursor_timeout=True).batch_size(1000)
 
-    for doc in doc_group2:
-        # if yielded_count >= 1000:
-        #     print(f"🛑 Đã lấy đủ 1000 bản ghi để test. Dừng generator.")
-        #     break
-        product_id = doc.get('viewing_product_id')
-        url = doc.get('referrer_url')
+    try:
+        for doc in doc_group2:
+            product_id = doc.get('viewing_product_id')
+            url = doc.get('referrer_url')
 
-        # LỌC CHECKPOINT: Bỏ qua nếu đã có trong file success productid
-        if product_id and product_id in existing_products_set:
-            continue
+            # Kiểm tra và bỏ qua URL test ngay từ đầu
+            if url and ("stage.glamira" in str(url) or "test.glamira" in str(url)):
+                continue
 
-        if product_id and url and isinstance(url, str) and product_id not in products_set:
-            products_set.add(product_id)
-            # # Nếu qua được hết các cửa ải thì mới yield và tăng biến đếm
-            # yielded_count += 1
-            yield {'product_id': product_id, 'url': url}
+            # LỌC CHECKPOINT: Bỏ qua nếu đã có trong file success productid
+            if product_id and product_id in existing_products_set:
+                continue
+
+            if product_id and url and isinstance(url, str) and product_id not in products_set:
+                products_set.add(product_id)
+                yield {'product_id': product_id, 'url': url}
+    finally:
+            doc_group2.close()
 
 def name_scrapping(item):
     # Hàm crawl dữ liệu từ url và xử lý theo từng loại
@@ -149,6 +166,7 @@ def name_scrapping(item):
     url = item['url']
 
     session = requests.Session()
+
     # Chọn ngẫu nhiên 1 kiểu trình duyệt
     browser_type = random.choice(BROWSER_LIST)
 
@@ -351,7 +369,6 @@ def run_crawler_round(round_number, stats, existing_products_set, start_time):
         with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as executor:
             for item in get_product(existing_products_set):
                 products_list.append(item)
-                # print(len(products_list))
 
                 if len(products_list) >= BATCH_SIZE:
                     results = list(executor.map(name_scrapping, products_list))
