@@ -14,6 +14,7 @@ config/database.ini
 # Data files
 data/raw/
 data/processed/
+data/gcp_key/
 
 # Dependencies lock
 poetry.lock
@@ -24,3 +25,6 @@ src/get_total.py
 src/network.py
 etl/extract/product_crawler_backup.py
 etl/extract/product_crawler_bak.py
+
+etl/load/export_to_bigquery.py
+etl/load/export_to_gcs.py

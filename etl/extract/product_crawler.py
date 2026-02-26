@@ -40,12 +40,16 @@ BROWSER_LIST = [
 current_dir = os.path.dirname(__file__)
 
 # Lấy thư mục gốc của project
-project_dir = os.path.abspath(os.path.join(current_dir, '..'))
+project_dir = os.path.abspath(os.path.join(current_dir, '../..'))
 
 # Lấy thư mục file .env
 env_path = os.path.join(project_dir, '.env')
 
-load_dotenv(dotenv_path=env_path)
+# Load file, nếu không thấy file sẽ báo
+if load_dotenv(dotenv_path=env_path):
+    print("Đã load thành công cấu hình từ file .env")
+else:
+    print("Không tìm thấy file .env, đang sử dụng biến môi trường có sẵn của hệ thống.")
 
 product_name_path = os.environ.get('PRODUCT_NAME_PATH')
 
@@ -180,8 +184,8 @@ def name_scrapping(item):
         "http://qxpkccco:bfy3pd1qeiyi@198.105.121.200:6462",
         "http://qxpkccco:bfy3pd1qeiyi@64.137.96.74:6641",
         "http://qxpkccco:bfy3pd1qeiyi@216.10.27.159:6837",
-        "http://qxpkccco:bfy3pd1qeiyi@23.26.71.145:5628",
-        "http://qxpkccco:bfy3pd1qeiyi@23.229.19.94:8689",
+        "http://qxpkccco:bfy3pd1qeiyi@142.111.67.146:5611",
+        "http://qxpkccco:bfy3pd1qeiyi@23.26.53.37:6003"
     ]
     # Chọn ngẫu nhiên 1 cái proxy để dùng cho request này
     random_proxy = random.choice(proxy_list)
