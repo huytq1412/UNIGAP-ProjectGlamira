@@ -395,8 +395,7 @@ def run_crawler_round(round_number, stats, existing_products_set, start_time):
                     chunk_num = stats['processed'] // BATCH_SIZE
                     pending = stats['total'] - stats['processed']
 
-                    print(
-                        f"{chunk_num:<6} | {pending:<8} | {stats['success']:<6} | {stats['dq_valid']:<6} | {stats['err_404']:<5} | {stats['err_403']:<5} | {stats['err_429']:<5} | "
+                    print(f"{chunk_num:<6} | {pending:<8} | {stats['success']:<6} | {stats['dq_valid']:<6} | {stats['err_404']:<5} | {stats['err_403']:<5} | {stats['err_429']:<5} | "
                         f"{stats['err_5xx']:<5} | {stats['err_network']:<5} | {stats['err_other']:<5} | {batch_duration:.2f}s")
 
                     products_list = []  # Reset batch đầu vào
