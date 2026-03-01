@@ -95,6 +95,7 @@ def trigger_bigquery_load(cloud_event):
         else:
             logging.info("Đang đối chiếu _id và merge dữ liệu 2 bảng ...")
 
+            # Xử lý upsert dữ liệu giữa bảng đã tồn tại và dữ liệu mới chuẩn đi được thêm vào
             merge_query = f"""
                         MERGE `{target_table}` tgt
                         USING `{temp_table}` tmp
@@ -114,5 +115,11 @@ def trigger_bigquery_load(cloud_event):
     except Exception as e:
         logging.error(f"Lỗi khi nạp bảng: {e}")
 
+        # Bọc thêm một lớp dọn dẹp phòng khi code lỗi giữa chừng, bảng tạm vẫn bị xóa
+        if 'temp_table' in locals():
+            client.delete_table(temp_table, not_found_ok=True)
+
+        # Trả về mã HTTP 500 để báo cho GCP thử lại
+        raise e
 
 

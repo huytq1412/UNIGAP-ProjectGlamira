@@ -87,12 +87,19 @@ def clear_checkpoint(collection):
         os.remove(checkpoint_file)
 
 def standardlized_for_parquet(df):
-    # Xử lý riêng cho cột cat_id
-    if 'cat_id' in df.columns:
-        # Biến ô trống dữ liệu thành chuỗi rỗng thay vì chữ 'nan'
-        df['cat_id'] = df['cat_id'].fillna('').astype(str)
+    # Các cột nghi ngờ dễ bị nhận nhầm thành số để ép thành string
+    force_string_cols = ['cat_id', 'is_paypal']
+
+    for force_col in force_string_cols:
+        if force_col in df.columns:
+            # Biến ô trống thành chuỗi rỗng và ép toàn bộ thành string
+            df[force_col] = df[force_col].fillna('').astype(str)
 
     for col in df.columns:
+        # Bỏ qua những cột vừa bị ép kiểu thủ công ở trên để đỡ tốn thời gian chạy lại
+        if col in force_string_cols:
+            continue
+
         # Bỏ qua các cột đã là kiểu số/ngày tháng rõ ràng, chỉ xử lý cột 'object' (kiểu thập cẩm)
         if df[col].dtype == 'object':
 
