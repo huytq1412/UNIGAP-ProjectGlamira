@@ -1,7 +1,7 @@
-# Project Glamira ETL Pipeline
+# Project Glamira ELT Pipeline
 
 ## Giới thiệu dự án
-Project Glamira là một Data Pipeline (ETL) hoàn chỉnh được thiết kế để tự động hóa việc trích xuất (Extract), biến đổi (Transform) và tải (Load) dữ liệu hành vi người dùng và thông tin sản phẩm từ hệ thống. 
+Project Glamira là một Data Pipeline (ELT) hoàn chỉnh được thiết kế để tự động hóa việc trích xuất (Extract), biến đổi (Transform) và tải (Load) dữ liệu hành vi người dùng và thông tin sản phẩm từ hệ thống. 
 
 Dự án không chỉ sở hữu module Crawler với cơ chế Anti-Bot mạnh mẽ và khả năng tự động ghi nhớ tiến trình (Checkpoint), mà còn mở rộng khả năng xử lý dữ liệu lớn bằng cách chuẩn hóa định dạng Parquet, tích hợp lưu trữ trên Google Cloud Storage (GCS) và xây dựng Data Warehouse tại Google BigQuery để sẵn sàng cho các bài toán phân tích.
 
