@@ -30,5 +30,3 @@ src/fix_parquet.py
 src/spot_error_column.py
 etl/extract/product_crawler_backup.py
 etl/extract/product_crawler_bak.py
-
-dbt_glamira/

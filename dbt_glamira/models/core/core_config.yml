@@ -1,0 +1,100 @@
+version: 2
+
+models:
+  # ==========================================
+  # DIMENSION TABLES
+  # ==========================================
+  
+  - name: dim_customer
+    description: "Bảng danh mục khách hàng"
+    columns:
+      - name: customer_key
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_exchange_rate
+    description: "Bảng tỷ giá hối đoái"
+    columns:
+      - name: exchange_rate_key
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_location
+    description: "Bảng danh mục vị trí địa lý theo IP"
+    columns:
+      - name: location_key
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_product
+    description: "Bảng danh mục sản phẩm"
+    columns:
+      - name: product_key
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_time
+    description: "Bảng danh mục thời gian"
+    columns:
+      - name: time_key
+        data_tests:
+          - not_null
+          - unique
+
+  # ==========================================
+  # FACT TABLE
+  # ==========================================
+  
+  - name: fact_sales_order
+    description: "Bảng lưu trữ chi tiết từng sản phẩm trong đơn hàng"
+    columns:
+      - name: sales_order_key
+        data_tests:
+          - not_null
+          - unique
+      
+      - name: product_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+
+      - name: customer_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_key
+
+      - name: location_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_location')
+                field: location_key
+
+      - name: time_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_time')
+                field: time_key
+      
+      - name: order_qty
+        description: "Số lượng sản phẩm trong một dòng đơn hàng"
+        data_tests:
+          - not_null
+          
+      - name: sales_amount
+        description: "Doanh thu nguyên bản chưa nhân tỷ giá"
+        data_tests:
+          - not_null

@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: mart_sales_analysis
+    description: "Bảng tổng hợp doanh thu, sản phẩm, địa lý phục vụ trực tiếp cho Looker"
+    
+    columns:
+      - name: sales_order_key
+        description: "Khóa chính duy nhất cho mỗi dòng giao dịch. Đảm bảo không bao giờ bị Fan-out khi lên Looker."
+        tests:
+          - unique
+          - not_null
+
+      - name: order_id
+        description: "Mã đơn hàng gốc từ hệ thống."
+        tests:
+          - not_null
+
+      - name: order_date
+        description: "Ngày giao dịch. Dùng để làm time-based trends."
+        tests:
+          - not_null
+
+      - name: product_code
+        description: "Mã sản phẩm (Natural Key)."
+        tests:
+          - not_null
+
+      - name: order_qty
+        description: "Số lượng sản phẩm trong đơn."
+        tests:
+          - not_null
+
+      - name: sales_amount_original
+        description: "Doanh thu tỷ giá gốc."
+        tests:
+          - not_null
+
+      - name: sales_amount_usd
+        description: "Doanh thu đã được quy đổi tỷ giá sang USD."
+        tests:
+          - not_null

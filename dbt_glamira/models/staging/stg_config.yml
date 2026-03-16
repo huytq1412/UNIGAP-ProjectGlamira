@@ -1,0 +1,56 @@
+version: 2
+
+models:
+  - name: stg_ip_locations
+    description: "Tra cứu thông tin địa lý từ IP"
+    columns:
+      - name: ip_address
+        description: "Địa chỉ IP tĩnh"
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_product_names
+    description: "Danh mục mã/tên sản phẩm"
+    columns:
+      - name: product_id
+        description: "Mã định danh sản phẩm"
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_exchange_rates
+    description: "Danh mục đơn vị tiền tệ"
+    columns:
+      - name: currency_code
+        description: "Mã đơn vị tiền tệ"
+        data_tests:
+          - not_null
+      
+      - name: rate_date
+        description: "Ngày bắt đầu có hiệu lực"
+        data_tests:
+          - not_null
+
+  - name: stg_raw_data
+    description: "Bảng dữ liệu giao dịch chi tiết từng sản phẩm"
+    columns:
+      - name: order_id
+        description: "Mã đơn hàng"
+        data_tests:
+          - not_null
+          
+      - name: product_id
+        description: "Mã sản phẩm trong giỏ hàng"
+        data_tests:
+          - not_null
+
+      - name: order_timestamp
+        description: "Thời gian đặt hàng chuẩn UTC"
+        data_tests:
+          - not_null
+
+      - name: order_qty
+        description: "Số lượng mua"
+        data_tests:
+          - not_null

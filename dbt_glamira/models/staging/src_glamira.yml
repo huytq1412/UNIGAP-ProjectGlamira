@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: raw_layer                   # Tên source
+    description: "Dataset chứa dữ liệu thô từ Project Glamira"
+    database: unigap-glamira-project  # Trỏ vào Project ID
+    schema: raw_layer                 # Trỏ vào Dataset
+    tables:
+      - name: raw_data
+        description: "Bảng lưu trữ hành vi người dùng"
+      - name: product_names
+        description: "Bảng map ID sản phẩm với tên sản phẩm"
+      - name: ip_locations
+        description: "Bảng tra cứu thông tin địa lý từ IP"
