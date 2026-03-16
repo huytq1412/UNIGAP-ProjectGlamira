@@ -9,7 +9,7 @@ from curl_cffi import requests
 from curl_cffi.requests.errors import RequestsError
 from config.get_mongo_connection import get_database, close_connection
 from src.get_data_from_env import get_filename
-from src.checkpoint_manager import save_checkpoint, load_processed_ids
+from src.checkpoint_manager import save_checkpoint, load_processed_ids, load_processed_403
 
 SOURCE_COLLECTION = 'raw_data'  # Collection chứa dữ liệu gốc
 TARGET_COLLECTION = 'product_names'  # Collection mới để chứa kết quả
@@ -93,7 +93,7 @@ def get_total():
 
     return len(products_set)
 
-def get_product(existing_products_set):
+def get_product(existing_products_set, existing_403_set):
     # Hàm lấy các dữ liệu product thỏa mãn điều kiện
     db = get_database()
     src_collection = db[SOURCE_COLLECTION]
@@ -125,6 +125,11 @@ def get_product(existing_products_set):
             if product_id and product_id in existing_products_set:
                 continue
 
+            # LỌC CHECKPOINT: Bỏ qua cặp ID + URL đã dính 403
+            if (product_id, url) in existing_403_set:
+                print(f"Bỏ qua pair 403 {product_id} -> {url}")
+                continue
+
             if product_id and url and isinstance(url, str) and product_id not in products_set:
                 products_set.add(product_id)
                 yield {'product_id': product_id, 'url': url}
@@ -147,11 +152,16 @@ def get_product(existing_products_set):
             url = doc.get('referrer_url')
 
             # Kiểm tra và bỏ qua URL test ngay từ đầu
-            if url and ("stage.glamira" in str(url) or "test.glamira" in str(url)):
-                continue
+            # if url and ("stage.glamira" in str(url) or "test.glamira" in str(url)):
+            #     continue
 
             # LỌC CHECKPOINT: Bỏ qua nếu đã có trong file success productid
             if product_id and product_id in existing_products_set:
+                continue
+
+            # LỌC CHECKPOINT: Bỏ qua cặp ID + URL đã dính 403
+            if (product_id, url) in existing_403_set:
+                print(f"Bỏ qua pair 403 {product_id} -> {url}")
                 continue
 
             if product_id and url and isinstance(url, str) and product_id not in products_set:
@@ -164,7 +174,7 @@ def name_scrapping(item):
     # Hàm crawl dữ liệu từ url và xử lý theo từng loại
 
     # Giúp request không bị gửi dồn dập cùng 1 lúc -> Server đỡ nghi ngờ
-    # time.sleep(random.uniform(3, 5))
+    time.sleep(random.uniform(3, 5))
 
     product_id = item['product_id']
     url = item['url']
@@ -235,7 +245,6 @@ def name_scrapping(item):
                     browser_type = new_browser
                     print(f"Gặp 403 (với productid {product_id}). Đổi sang {new_browser} và thử lại ngay...")
 
-                    # Chỉ sleep nhẹ
                     time.sleep(30)
                     continue
 
@@ -326,7 +335,7 @@ def process_results(results_list, csv_writer, stats):
             stats['err_other'] += 1
 
         # 3. Xử lý CHECKPOINT: Ghi ngay lập tức productid này vào file txt tương ứng
-        save_checkpoint(result['product_id'], result['status'])
+        save_checkpoint(result['product_id'], result['status'], result['url'])
 
         # 4. Xử lý Data Quality & chuẩn bị ghi vào MongoDB
         if status_key == 'success':
@@ -344,7 +353,7 @@ def process_results(results_list, csv_writer, stats):
                     stats[dq_key] += 1
     return insert_mongo_batch
 
-def run_crawler_round(round_number, stats, existing_products_set, start_time):
+def run_crawler_round(round_number, stats, existing_products_set, existing_403_set, start_time):
     # Hàm xử lý crawl và lưu dữ liệu lặp lại theo từng round
 
     tgt_collection = db[TARGET_COLLECTION]
@@ -371,7 +380,7 @@ def run_crawler_round(round_number, stats, existing_products_set, start_time):
         # Sử dụng concurrent.futures để có nhiều luồng thu thập crawl dữ liệu hơn
         # Khởi tạo bể chứa các luồng
         with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as executor:
-            for item in get_product(existing_products_set):
+            for item in get_product(existing_products_set, existing_403_set):
                 products_list.append(item)
 
                 if len(products_list) >= BATCH_SIZE:
@@ -490,9 +499,12 @@ if __name__ == "__main__":
         # Đọc tất cả ID đã làm xong từ trước
         existing_products_set = load_processed_ids()
 
+        # Nạp danh sách cặp lỗi 403
+        existing_403_set = load_processed_403()
+
         stats['total'] = get_total() - len(existing_products_set)
 
-        run_crawler_round(i, stats, existing_products_set, start_time)
+        run_crawler_round(i, stats, existing_products_set, existing_403_set, start_time)
 
         print(f"\n--> Kết thúc Vòng {i}.")
         if i < MAX_RETRY_ROUNDS:
