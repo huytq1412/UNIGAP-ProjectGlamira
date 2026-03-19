@@ -75,7 +75,7 @@ SELECT
           ELSE 
             REPLACE(clean_price_str, ',', '')
         END 
-        AS NUMERIC) AS sales_amount
+        AS NUMERIC) AS sales_price
       ,NULLIF(TRIM(currency), '') AS currency
       ,options_list
 FROM unnested

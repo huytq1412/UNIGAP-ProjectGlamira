@@ -27,7 +27,7 @@ models:
         data_tests:
           - not_null
       
-      - name: rate_date
+      - name: valid_from
         description: "Ngày bắt đầu có hiệu lực"
         data_tests:
           - not_null

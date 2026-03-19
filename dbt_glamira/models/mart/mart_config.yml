@@ -21,7 +21,17 @@ models:
         tests:
           - not_null
 
-      - name: product_code
+      - name: order_year_month
+        description: "Tháng giao dịch. Test not_null để đảm bảo bảng dim_date đã được generate đủ ngày."
+        data_tests:
+          - not_null
+          
+      - name: order_day_of_week
+        description: "Số thứ tự ngày trong tuần"
+        data_tests:
+          - not_null
+
+      - name: product_id
         description: "Mã sản phẩm (Natural Key)."
         tests:
           - not_null

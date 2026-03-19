@@ -22,7 +22,7 @@ models:
           - unique
 
   - name: dim_location
-    description: "Bảng danh mục vị trí địa lý theo IP"
+    description: "Bảng danh mục vị trí địa lý"
     columns:
       - name: location_key
         data_tests:
@@ -37,10 +37,10 @@ models:
           - not_null
           - unique
 
-  - name: dim_time
+  - name: dim_date
     description: "Bảng danh mục thời gian"
     columns:
-      - name: time_key
+      - name: date_key
         data_tests:
           - not_null
           - unique
@@ -81,20 +81,29 @@ models:
                 to: ref('dim_location')
                 field: location_key
 
-      - name: time_key
+      - name: date_key
         data_tests:
           - not_null
           - relationships:
               arguments:
-                to: ref('dim_time')
-                field: time_key
+                to: ref('dim_date')
+                field: date_key
       
+      - name: order_id
+        data_tests:
+          - not_null
+          
+      - name: currency_code
+        description: "Mã tiền tệ gốc"
+        data_tests:
+          - not_null
+
       - name: order_qty
         description: "Số lượng sản phẩm trong một dòng đơn hàng"
         data_tests:
           - not_null
           
-      - name: sales_amount
-        description: "Doanh thu nguyên bản chưa nhân tỷ giá"
+      - name: sales_price
+        description: "Giá bán nguyên bản chưa nhân tỷ giá"
         data_tests:
           - not_null

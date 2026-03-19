@@ -214,10 +214,10 @@ rm data/processed/parquet_result/checkpoints/*
 ## Hạn chế hiện tại (Limitations)
 
 Dù đã được tối ưu hóa, dự án hiện tại vẫn còn một số giới hạn nhất định:
-1. **Phụ thuộc vào Proxy miễn phí:** Do sử dụng gói Proxy Datacenter miễn phí (Webshare), tiến trình Crawler bị giới hạn băng thông (1GB/tháng). Nếu crawl dữ liệu lớn (>10.000 trang), hệ thống sẽ trả về lỗi `402 Payment Required`.
+1. **Phụ thuộc vào Proxy miễn phí:** Do sử dụng gói Proxy Datacenter miễn phí (Webshare), tiến trình Crawler bị giới hạn băng thông. Nếu crawl dữ liệu lớn, hệ thống sẽ trả về lỗi `402 Payment Required`.
 2. **Độ nhạy cảm với cấu trúc HTML:** Logic bóc tách tên sản phẩm phụ thuộc vào cấu trúc thẻ HTML hiện tại của website (VD: `h1.page-title span`, thẻ `meta og:title`). Nếu phía website thay đổi giao diện, hàm BeautifulSoup có thể sẽ không bắt được dữ liệu.
 3. **Dữ liệu IP tĩnh:** Module IP Processing đang sử dụng file Database cục bộ (`.BIN`). Nếu không tải bản cập nhật mới thường xuyên, một số dải IP mới cấp phát có thể không được nhận diện chính xác.
-4. **Thiếu tính năng Tự động hóa & Lập lịch:** Hiện tại, Pipeline vẫn đang được kích hoạt thủ công (Manual trigger) thông qua các lệnh terminal trên máy ảo.
+4. **Thiếu tính năng Tự động hóa & Lập lịch:** Hiện tại, Pipeline vẫn đang được kích hoạt thủ công thông qua các lệnh terminal trên máy ảo.
 
 ---
 

@@ -4,7 +4,7 @@ WITH date_array AS (
 )
 
 SELECT 
-    CAST(FORMAT_DATE('%Y%m%d', dt) AS INT64) AS time_key
+    CAST(FORMAT_DATE('%Y%m%d', dt) AS INT64) AS date_key
     ,dt AS full_date
     ,EXTRACT(DAY FROM dt) AS day
     ,EXTRACT(MONTH FROM dt) AS month
