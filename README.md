@@ -122,8 +122,8 @@ UNIGAP-ProjectGlamira/
 * Cung cấp Dashboard tương tác thời gian thực với các bộ lọc Cross-filtering mạnh mẽ.
 ---
 
-## Hướng dẫn cài đặt (Môi trường Ubuntu/GCP)
-1. Yêu cầu hệ thống (Prerequisites)
+## Hướng dẫn cài đặt
+1. Yêu cầu hệ thống
 * Hệ điều hành: Linux (Ubuntu/Debian) hoặc MacOS.
 
 * Python: >= 3.10
