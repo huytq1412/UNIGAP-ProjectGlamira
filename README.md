@@ -35,7 +35,7 @@ Kết quả đầu ra của Data Pipeline là bộ Dashboard phân tích toàn d
 * **Hình ảnh báo cáo:**
 ![Product Performance](assets/product_performance.png)
 ---
-## Cấu trúc thư mục (Project Structure)
+## Cấu trúc thư mục 
 
 ```text
 UNIGAP-ProjectGlamira/

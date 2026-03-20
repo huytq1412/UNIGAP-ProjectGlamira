@@ -6,7 +6,7 @@ Thư mục `dbt_glamira` chứa toàn bộ mã nguồn mô hình hóa dữ liệ
 Nhiệm vụ của module này là thực hiện bước **Transform (T)** trong quy trình ELT: Lấy dữ liệu thô (Raw Data) từ BigQuery, làm sạch, chuẩn hóa, và xây dựng thành một Data Warehouse chuẩn mô hình Star Schema, sẵn sàng phục vụ cho các BI Dashboard trên Looker Studio.
 
 ---
-## Cấu trúc thư mục (Project Structure)
+## Cấu trúc thư mục
 ```text
 dbt_glamira/
 ├── models/
