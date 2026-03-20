@@ -13,7 +13,7 @@ from src.checkpoint_manager import save_checkpoint, load_processed_ids, load_pro
 
 SOURCE_COLLECTION = 'raw_data'  # Collection chứa dữ liệu gốc
 TARGET_COLLECTION = 'product_names'  # Collection mới để chứa kết quả
-BATCH_SIZE = 100
+BATCH_SIZE = 1000
 WORKERS = 15
 MAX_RETRY_ROUNDS = 3
 

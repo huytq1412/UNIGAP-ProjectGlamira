@@ -3,10 +3,38 @@
 ## Giới thiệu dự án
 Project Glamira là một Data Pipeline (ELT) hoàn chỉnh được thiết kế để tự động hóa việc trích xuất (Extract), biến đổi (Transform) và tải (Load) dữ liệu hành vi người dùng và thông tin sản phẩm từ hệ thống. 
 
-Dự án không chỉ sở hữu module Crawler với cơ chế Anti-Bot mạnh mẽ và khả năng tự động ghi nhớ tiến trình (Checkpoint), mà còn mở rộng khả năng xử lý dữ liệu lớn bằng cách chuẩn hóa định dạng Parquet, tích hợp lưu trữ trên Google Cloud Storage (GCS) và xây dựng Data Warehouse tại Google BigQuery để sẵn sàng cho các bài toán phân tích.
-
+Dự án không chỉ sở hữu module Crawler với cơ chế Anti-Bot mạnh mẽ và khả năng tự động ghi nhớ tiến trình (Checkpoint), mà còn mở rộng khả năng xử lý dữ liệu lớn bằng cách chuẩn hóa định dạng Parquet, tích hợp lưu trữ trên Google Cloud Storage (GCS) và xây dựng Data Warehouse tại Google BigQuery để sẵn sàng cho các bài toán phân tích. 
+Ngoài ra dự án còn sử dụng dbt (data build tool) để thiết kế mô hình dữ liệu Star Schema, và cuối cùng được trực quan hóa thành các báo cáo tương tác chuyên sâu trên Looker Studio.
 ---
+## BI Dashboards
+Kết quả đầu ra của Data Pipeline là bộ Dashboard phân tích toàn diện hành vi mua sắm và hiệu suất kinh doanh của Glamira
 
+**[Truy cập dashboard tại đây](https://lookerstudio.google.com/reporting/5ec34374-165a-4891-b14d-b1acec65298c/page/t4asF)**
+
+### 1. Phân tích Tổng quan Doanh thu (Revenue Analysis)
+* **Mục tiêu:** Đánh giá bức tranh tài chính tổng thể và các nhân tố đóng góp doanh thu chính.
+* **Business Insights:** Theo dõi các chỉ số cốt lõi (Doanh thu, Số lượng đơn, AOV) theo thời gian thực/sản phẩm. Bóc tách tỷ trọng doanh thu giữa ngày thường và cuối tuần để phân tích hành vi mua sắm. Đồng thời nhận diện và theo dõi danh sách các đơn hàng có giá trị đột biến thông qua bảng xếp hạng Top Orders.
+* **Hình ảnh báo cáo:**
+![Revenue Analysis](assets/revenue_analysis.png)
+
+### 2. Phân bổ Địa lý (Geographic Distribution)
+* **Mục tiêu:** Xác định các thị trường "Bò sữa" (Cash Cow) và đánh giá độ phủ sóng toàn cầu.
+* **Business Insights:** Trực quan hóa dòng doanh thu trên bản đồ thế giới (Geo Map) kết hợp tính năng Drill-down từ cấp độ Quốc gia xuống từng Thành phố. Cho phép các nhà quản lý vùng (Regional Managers) so sánh chéo hiệu suất, số lượng đơn hàng và giá trị trung bình đơn (AOV) giữa các khu vực chiến lược.
+* **Hình ảnh báo cáo:**
+![Geographic Distribution](assets/geographic_distribution.png)
+
+### 3. Phân tích Xu hướng Thời gian (Time-based Trends)
+* **Mục tiêu:** Theo dõi tiến độ hoàn thành mục tiêu (Run-rate) và thói quen mua sắm chi tiết.
+* **Business Insights:** Cung cấp góc nhìn toàn cảnh về tốc độ tăng trưởng dòng tiền thông qua biểu đồ doanh thu lũy kế. Tích hợp Table with heatmap theo Ngày/Giờ nhằm xác định "Khung giờ vàng" chốt đơn, hỗ trợ đắc lực cho team Marketing phân bổ ngân sách chạy Ads và tung các chiến dịch Flash Sale.
+* **Hình ảnh báo cáo:**
+![Time-based Trends](assets/timebased_trends.png)
+
+### 4. Hiệu suất Sản phẩm (Product Performance)
+* **Mục tiêu:** Bóc tách danh mục sản phẩm, xác định rổ hàng hóa cốt lõi để tối ưu chiến lược Tồn kho & Đẩy số.
+* **Business Insights:** Ứng dụng biểu đồ phân tán để xác định hiệu suất sản phẩm nhằm phân loại rõ ràng sản phẩm "hot" và sản phẩm ít hiệu quả. Theo dõi danh sách Top các sản phẩm mang lại doanh thu cao nhất, kết hợp bảng thống kê chi tiết để đánh giá sức mua thực tế của từng sản phẩm.
+* **Hình ảnh báo cáo:**
+![Product Performance](assets/product_performance.png)
+---
 ## Cấu trúc thư mục (Project Structure)
 
 ```text
@@ -23,6 +51,7 @@ UNIGAP-ProjectGlamira/
 │       │   └── product_names.csv        # File CSV backup/log kết quả crawl
 │       └── parquet_result/          # Dữ liệu đã chuyển đổi sang định dạng Parquet
 │           └── checkpoints/         # Dữ liệu checkpoint để export dữ liệu
+├── dbt_glamira/                     # Thư mục chứa toàn bộ code Data Modeling (dbt)
 ├── etl/
 │   ├── extract/
 │   │   ├── __init__.py
@@ -70,7 +99,7 @@ UNIGAP-ProjectGlamira/
 
 4. Tối ưu hóa Database (MongoDB):
 
-* Phân lô dữ liệu tự động (Cursor Batching) giới hạn batch_size(100) giúp xử lý mượt mà hàng chục ngàn bản ghi mà không bị lỗi.
+* Phân lô dữ liệu tự động (Cursor Batching) giới hạn batch_size(1000) giúp xử lý mượt mà hàng chục ngàn bản ghi mà không bị lỗi.
 
 * Hỗ trợ Compound Indexes giúp tăng tốc độ truy vấn data từ raw_data.
 
@@ -85,6 +114,12 @@ UNIGAP-ProjectGlamira/
 * Bổ sung các script SQL để kiểm tra, thống kê chất lượng dữ liệu đẩy vào BigQuery
 
 * Sử dụng raw_data_profiling.sql để thực hiện Data Profiling trực tiếp trên BigQuery, đánh giá tính toàn vẹn và phân phối của dữ liệu sau khi load.
+
+7. Data Modeling & Analytics (dbt & Looker):
+
+* Ứng dụng dbt trực tiếp trên BigQuery để chuyển đổi dữ liệu thô thành Data Mart, tối ưu hóa chi phí truy vấn.
+
+* Cung cấp Dashboard tương tác thời gian thực với các bộ lọc Cross-filtering mạnh mẽ.
 ---
 
 ## Hướng dẫn cài đặt (Môi trường Ubuntu/GCP)
@@ -139,10 +174,13 @@ _http://username:password@ip_address:port_
 5. Ủy quyền GCP:
 * Trong trường hợp chạy từ local: Đảm bảo đã tải file JSON Service Account từ Google Cloud Console và đặt vào thư mục data/gcp_key/. Phân quyền Storage Object Admin và BigQuery Data Editor cho Service Account này.
 * Trong trường hợp chạy trên VM của GCP: Đảm bảo VM được sử dụng Service account có quyền Storage Object Admin và BigQuery Data Editor và Access scopes chọn option Allow full access to all Cloud APIs
+
+6. Setup các models dbt:
+* Xem thêm file dbt_glamira/README.md để biết cách setup các models dbt
 ---
 
 ## Hướng dẫn chạy Script
-1. Kịch bản 1: Chạy Crawler thu thập tên sản phẩm
+1. Chạy Crawler thu thập tên sản phẩm
 * Để chạy kịch bản cào dữ liệu, hãy đứng ở thư mục gốc của dự án và sử dụng lệnh poetry run:
 
 ```
@@ -161,7 +199,7 @@ poetry run python -m etl.extract.product_crawler
 
   * Ghi realtime trạng thái vào file text (Checkpoint), ghi log vào file CSV và lưu data sạch vào Collection product_names trong MongoDB.
 
-2. Kịch bản 2: Chạy Transform xử lý định vị IP
+2. Chạy Transform xử lý định vị IP
 * Để chạy kịch bản xử lý định vị IP, hãy đứng ở thư mục gốc của dự án và sử dụng lệnh poetry run:
 
 ```
@@ -178,23 +216,26 @@ poetry run python -m etl.transform.ip_processing
 
   * Lưu đồng loạt (Bulk Insert) dữ liệu sạch vào collection ip_locations.
 
-3. Kịch bản 3: Chuyển đổi dữ liệu và đẩy lên GCS
+3. Chuyển đổi dữ liệu và đẩy lên GCS
 * Để chạy kịch bản đẩy dữ liệu lên GCS, hãy đứng ở thư mục gốc của dự án và sử dụng lệnh poetry run:
 ```
 poetry run python -m etl.load.export_to_gcs
 ```
 
-4. Kịch bản 4: Load dữ liệu từ GCS vào BigQuery
+4. Load dữ liệu từ GCS vào BigQuery
 * Để chạy kịch bản load dữ liệu từ GCS vào BigQuery, hãy đứng ở thư mục gốc của dự án và sử dụng lệnh poetry run:
 ```
 poetry run python -m etl.load.export_to_bigquery
 ```
 
-5. Kịch bản 5: Trigger auto load dữ liệu từ GCS vào BigQuery
+5. Trigger auto load dữ liệu từ GCS vào BigQuery
 * Để chạy kịch bản load dữ liệu từ GCS vào BigQuery, hãy sử dụng Cloud run function và deploy script `trigger_bigquery_load.py`
 
-6. Kịch bản 6: Kiểm tra chất lượng dữ liệu trên BigQuery
+6. Kiểm tra chất lượng dữ liệu trên BigQuery
 * Copy nội dung file `tests/raw_data_profiling.sql`và chạy trên giao diện BigQuery Workspace để xem các chỉ số thống kê về Null, Duplicates, và phân phối dữ liệu.
+
+7. Chạy các models dbt:
+* Xem thêm file dbt_glamira/README.md để biết cách chạy các models dbt
 ---
 
 ## Quản lý dữ liệu log (Reset tiến trình)
@@ -228,5 +269,4 @@ Dù đã được tối ưu hóa, dự án hiện tại vẫn còn một số gi
 1. **Nâng cấp hạ tầng Proxy:** Chuyển đổi sang các dịch vụ Rotating Residential Proxy trả phí (như BrightData, SmartProxy) hoặc các API Scraping chuyên dụng để tăng tốc độ crawl (lên 50-100 luồng) và tránh hoàn toàn lỗi 402/403.
 2. **Tự động hóa toàn phần:** Đưa toàn bộ các script này vào các tool xử lý chạy tự động (Apache Airflow, ...) (thay vì chạy bash script/cronjob) để quản lý luồng chạy tự động theo ngày/tuần, tự động retry khi lỗi pipeline.
 3. **Hệ thống Cảnh báo (Alerting):** Tích hợp webhook (Discord/Telegram) để tự động gửi tin báo cáo tình hình xử lý lỗi
-4. **Nâng cấp công cụ Transform (dbt):** Áp dụng dbt ngay trên BigQuery để chuyển đổi dữ liệu (ELT) từ bảng Raw sang các bảng Dim/Fact chuẩn sao (Star Schema), tối ưu cho các công cụ analytical
-5. **Ứng dụng Serverless (Cloud Run):** Đóng gói các module ETL thành các Docker Container và triển khai lên Google Cloud Run.
+4. **Ứng dụng Serverless (Cloud Run):** Đóng gói các module ETL thành các Docker Container và triển khai lên Google Cloud Run.

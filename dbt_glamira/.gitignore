@@ -1,4 +1,4 @@
-
+# dbt properties
 target/
 dbt_packages/
 logs/
