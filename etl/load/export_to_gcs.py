@@ -1,7 +1,7 @@
 import os
 import logging
 import json
-import pandas as pd
+import fastavro
 from google.cloud import storage
 from config.get_mongo_connection import get_database, close_connection
 from src.get_data_from_env import get_filename
@@ -36,18 +36,17 @@ bucket_name = os.environ.get('BUCKET_NAME')
 if not bucket_name:
     raise ValueError("LỖI: Biến BUCKET_NAME chưa được khai báo trong file .env")
 
-parquet_path = os.environ.get('PARQUET_PATH')
+avro_path = os.environ.get('AVRO_PATH')
+if not avro_path:
+    raise ValueError("LỖI: Biến AVRO_PATH chưa được khai báo trong file .env")
 
-if not parquet_path:
-    raise ValueError("LỖI: Biến PARQUET_PATH chưa được khai báo trong file .env")
-
-parquet_foldername = os.path.abspath(os.path.expanduser(parquet_path))
+avro_foldername = os.path.abspath(os.path.expanduser(avro_path))
 
 # ĐẢM BẢO THƯ MỤC TỒN TẠI: Nếu chưa có thì Python tự động tạo folder này
-os.makedirs(parquet_foldername, exist_ok=True)
+os.makedirs(avro_foldername, exist_ok=True)
 
 # Thư mục lưu checkpoint load dữ liệu lên GCS
-checkpoint_path = os.path.join(parquet_foldername, 'checkpoints')
+checkpoint_path = os.path.join(avro_foldername, 'checkpoints')
 os.makedirs(checkpoint_path, exist_ok=True)
 
 gcp_key_path = os.environ.get('GCP_KEY_FILE_PATH')
@@ -64,6 +63,211 @@ if gcp_key_path:
 else:
     # Trường hợp 2: Chạy trên VM (Lệnh storage.Client() ở dưới sẽ tự động dùng quyền của VM)
     logging.info("Không tìm thấy File JSON. Sẽ sử dụng quyền mặc định của VM (GCP Mode).")
+
+# Định nghĩa avro schemas
+SCHEMAS = {
+    "raw_data": {
+        "type": "record",
+        "name": "RawDataRecord",
+        "fields": [
+            {"name": "mongo_id", "type": ["null", "string"], "default": None},
+            {"name": "api_version", "type": ["null", "string"], "default": None},
+            {"name": "ip", "type": ["null", "string"], "default": None},
+            {"name": "device_id", "type": ["null", "string"], "default": None},
+            {"name": "user_id_db", "type": ["null", "string"], "default": None},
+            {"name": "email_address", "type": ["null", "string"], "default": None},
+            {"name": "user_agent", "type": ["null", "string"], "default": None},
+            {"name": "resolution", "type": ["null", "string"], "default": None},
+            {"name": "local_time", "type": ["null", "string"], "default": None},
+            {"name": "time_stamp", "type": ["null", "long"], "default": None},
+            {"name": "collection", "type": ["null", "string"], "default": None},
+            {"name": "current_url", "type": ["null", "string"], "default": None},
+            {"name": "referrer_url", "type": ["null", "string"], "default": None},
+            {"name": "key_search", "type": ["null", "string"], "default": None},
+            {"name": "utm_source", "type": ["null", "string"], "default": None},
+            {"name": "utm_medium", "type": ["null", "string"], "default": None},
+            {"name": "product_id", "type": ["null", "string"], "default": None},
+            {"name": "viewing_product_id", "type": ["null", "string"], "default": None},
+            {"name": "cat_id", "type": ["null", "string"], "default": None},
+            {"name": "collect_id", "type": ["null", "string"], "default": None},
+            {"name": "category_id", "type": ["null", "string"], "default": None},
+            {"name": "store_id", "type": ["null", "string"], "default": None},
+            {"name": "order_id", "type": ["null", "string"], "default": None},
+            {"name": "price", "type": ["null", "string"], "default": None},
+            {"name": "price_amount", "type": ["null", "string"], "default": None},
+            {"name": "currency", "type": ["null", "string"], "default": None},
+            {"name": "is_paypal", "type": ["null", "string"], "default": None},
+            {"name": "show_recommendation", "type": ["null", "string"], "default": None},
+            {"name": "recommendation", "type": ["null", "string"], "default": None},
+            {"name": "recommendation_product_id", "type": ["null", "string"], "default": None},
+            {"name": "recommendation_product_position", "type": ["null", "string"], "default": None},
+            {
+                "name": "option",
+                "type": ["null", {
+                    "type": "record",
+                    "name": "RootOption",
+                    "fields": [
+                        {"name": "option_alloy", "type": ["null", "string"], "default": None},
+                        {"name": "option_diamond", "type": ["null", "string"], "default": None},
+                        {"name": "option_stone", "type": ["null", "string"], "default": None},
+                        {"name": "option_quality", "type": ["null", "string"], "default": None},
+                        {"name": "option_pearlcolor", "type": ["null", "string"], "default": None},
+                        {"name": "option_finish", "type": ["null", "string"], "default": None},
+                        {"name": "option_shapediamond", "type": ["null", "string"], "default": None},
+                        {"name": "option_price", "type": ["null", "string"], "default": None},
+                        {"name": "option_price_amount", "type": ["null", "string"], "default": None},
+                        {"name": "option_Kollektion", "type": ["null", "string"], "default": None},
+                        {"name": "option_kollektion_id", "type": ["null", "string"], "default": None},
+                        {"name": "option_option_id", "type": ["null", "string"], "default": None},
+                        {"name": "option_option_label", "type": ["null", "string"], "default": None},
+                        {"name": "option_value_id", "type": ["null", "string"], "default": None},
+                        {"name": "option_value_label", "type": ["null", "string"], "default": None},
+                        {"name": "option_quality_label", "type": ["null", "string"], "default": None}
+                    ]
+                }], "default": None
+            },
+            {
+                "name": "cart_products",
+                "type": ["null", {
+                    "type": "array",
+                    "items": {
+                        "type": "record",
+                        "name": "CartProduct",
+                        "fields": [
+                            {"name": "product_id", "type": ["null", "string"], "default": None},
+                            {"name": "price", "type": ["null", "string"], "default": None},
+                            {"name": "amount", "type": ["null", "string"], "default": None},
+                            {"name": "currency", "type": ["null", "string"], "default": None},
+                            {
+                                "name": "option",
+                                "type": ["null", {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "record",
+                                        "name": "CartProductOption",
+                                        "fields": [
+                                            {"name": "option_id", "type": ["null", "string"], "default": None},
+                                            {"name": "option_label", "type": ["null", "string"], "default": None},
+                                            {"name": "value_id", "type": ["null", "string"], "default": None},
+                                            {"name": "value_label", "type": ["null", "string"], "default": None}
+                                        ]
+                                    }
+                                }], "default": None
+                            }
+                        ]
+                    }
+                }], "default": None
+            }
+        ]
+    },
+    "product_names": {
+        "type": "record",
+        "name": "ProductNamesRecord",
+        "fields": [
+            {"name": "mongo_id", "type": ["null", "string"], "default": None},
+            {"name": "product_id", "type": ["null", "string"], "default": None},
+            {"name": "product_name", "type": ["null", "string"], "default": None},
+            {"name": "url", "type": ["null", "string"], "default": None}
+        ]
+    },
+    "ip_locations": {
+        "type": "record",
+        "name": "IpLocationsRecord",
+        "fields": [
+            {"name": "mongo_id", "type": ["null", "string"], "default": None},
+            {"name": "ip", "type": ["null", "string"], "default": None},
+            {"name": "country_short", "type": ["null", "string"], "default": None},
+            {"name": "country_long", "type": ["null", "string"], "default": None},
+            {"name": "region", "type": ["null", "string"], "default": None},
+            {"name": "city", "type": ["null", "string"], "default": None}
+        ]
+    }
+}
+
+# DANH SÁCH CÁC CỘT HỢP LỆ TRÊN BIGQUERY (PHỄU LỌC)
+OPTION_KEYS = [
+    'option_alloy', 'option_diamond', 'option_stone', 'option_quality',
+    'option_pearlcolor', 'option_finish', 'option_shapediamond',
+    'option_price', 'option_price_amount', 'option_Kollektion',
+    'option_kollektion_id', 'option_option_id', 'option_option_label',
+    'option_value_id', 'option_value_label', 'option_quality_label'
+]
+
+def clean_root_option(root_option_data):
+    # Giỏ tạm để chứa các key sau khi đã đắp tiền tố 'option_'
+    result = {}
+
+    # TRƯỜNG HỢP 1: Dữ liệu MongoDB là một Dictionary
+    if isinstance(root_option_data, dict):
+        for key, value in root_option_data.items():
+            if value is not None:
+                # Đắp 'option_' vào trước key gốc của phần tử (VD: 'option_label' -> 'option_option_label')
+                new_key = f"option_{key}"
+                result[new_key] = str(value)
+
+    # TRƯỜNG HỢP 2: Dữ liệu MongoDB là một List
+    elif isinstance(root_option_data, list):
+        for item in root_option_data:
+            # Kiểm tra mỗi phần tử trong mảng phải là một Dictionary
+            if isinstance(item, dict):
+                for key, value in item.items():
+                    if value is not None:
+                        # Đắp 'option_' vào trước key gốc của phần tử (VD: 'option_label' -> 'option_option_label')
+                        new_key = f"option_{key}"
+                        result[new_key] = str(value)
+
+    # Lọc qua danh sách, chỉ giữ lại những giá trị được khai báo trong OPTION_KEYS
+    final_result = {}
+    for key, value in result.items():
+        if key in OPTION_KEYS:
+            final_result[key] = value
+
+    return final_result
+
+def standardlized_for_avro(doc, collection_name, is_root_option=True):
+    # Hàm chuẩn hóa các cột cho file avro
+    # Đổi _id thành mongo_id cho các bảng.
+    # Ép tất cả các trường thành String (trừ time_stamp là Int) để khớp với Schema.
+
+    if not isinstance(doc, dict):
+        return doc
+
+    cleaned = {}
+    for key, value in doc.items():
+        if value is None:
+            cleaned[key] = None
+            continue
+
+        # Tự động map _id của MongoDB sang mongo_id để tránh lỗi BigQuery
+        if key == '_id':
+            cleaned['mongo_id'] = str(value)
+            continue
+
+        # Đảm bảo time_stamp là dạng số nguyên
+        if collection_name == 'raw_data' and key == 'time_stamp':
+            try:
+                cleaned[key] = int(value)
+            except (ValueError, TypeError):
+                cleaned[key] = None
+            continue
+
+        if collection_name == 'raw_data' and key == 'option' and is_root_option:
+            cleaned[key] = clean_root_option(value)
+            continue
+
+        # Xử lý lồng nhau (Nested data)
+        if isinstance(value, dict):
+            cleaned[key] = standardlized_for_avro(value, collection_name, is_root_option=False)
+        elif isinstance(value, list):
+            cleaned[key] = [standardlized_for_avro(item, collection_name, is_root_option=False) for item in value]
+        else:
+            # Tất cả các giá trị còn lại ép thành String theo đúng Schema BigQuery
+            if not is_root_option and key == 'option' and value == '':
+                cleaned[key] = None
+            else:
+                cleaned[key] = str(value)
+
+    return cleaned
 
 def get_checkpoint(collection):
     # Đọc file checkpoint xem lần trước chạy đến đâu
@@ -86,78 +290,27 @@ def clear_checkpoint(collection):
     if os.path.exists(checkpoint_file):
         os.remove(checkpoint_file)
 
-def standardlized_for_parquet(df):
-    # Các cột nghi ngờ dễ bị nhận nhầm thành số để ép thành string
-    force_string_cols = ['cat_id', 'is_paypal']
-
-    for force_col in force_string_cols:
-        if force_col in df.columns:
-            # Biến ô trống thành chuỗi rỗng và ép toàn bộ thành string
-            df[force_col] = df[force_col].fillna('').astype(str)
-
-    for col in df.columns:
-        # Bỏ qua những cột vừa bị ép kiểu thủ công ở trên để đỡ tốn thời gian chạy lại
-        if col in force_string_cols:
-            continue
-
-        # Bỏ qua các cột đã là kiểu số/ngày tháng rõ ràng, chỉ xử lý cột 'object' (kiểu thập cẩm)
-        if df[col].dtype == 'object':
-
-            # TẠO MẶT NẠ LỌC: Chỉ tìm những ô KHÔNG BỊ TRỐNG
-            valid_mask = df[col].notna()
-
-            # Nếu cột trống dữ liệu, bỏ qua luôn
-            if not valid_mask.any():
-                continue
-
-            # Thay vì quét apply toàn bộ cột, ta chỉ lấy mẫu 100 dòng đầu có chứa data để đoán định dạng
-            sample_data = df.loc[valid_mask, col].head(100)
-            has_complex_type = sample_data.apply(lambda x: isinstance(x, (list, dict))).any()
-
-            # Nếu cột chứa dữ liệu phức tạp (LIST/DICT)
-            if has_complex_type:
-                processed_values = []
-
-                # Lấy ra đúng những ô CÓ DỮ LIỆU (bỏ qua ô trống) để mang đi xử lý
-                data_to_process = df.loc[valid_mask, col]
-
-                # Lặp qua từng ô để xử lý kiểu dữ liệu
-                for x in data_to_process:
-                    if isinstance(x, (list, dict)):
-                        # Nếu là mảng -> ép json biến thành string
-                        json_str = json.dumps(x, ensure_ascii=False)
-                        processed_values.append(json_str)
-
-                    else:
-                        # Nếu chỉ là số hoặc chữ -> Ép thành string
-                        obj_str = str(x)
-                        processed_values.append(obj_str)
-
-                # Lấy toàn bộ kết quả đã xử lý đè ngược lại vào bảng DataFrame
-                df.loc[valid_mask, col] = processed_values
-
-            # Nếu cột chứa dữ liệu đơn giản
-            else:
-                df.loc[valid_mask, col] = df.loc[valid_mask, col].astype(str)
-
-    return df
-
 def convert_and_upload(collection, data_list, part_number, bucket):
     # Hàm phụ trách biến mảng thành Parquet và đẩy lên GCP
 
-    # Chuyển đổi sang Parquet
-    filename = f"{collection}_part_{part_number}.parquet"
+    # Chuyển đổi sang Avro
+    filename = f"{collection}_part_{part_number}.avro"
 
-    local_filename = os.path.join(parquet_foldername, filename)
+    local_filename = os.path.join(avro_foldername, filename)
 
-    df = pd.DataFrame(data_list)
+    # Xử lý chuẩn hóa dữ liệu để khớp với Avro Schema
+    processed_data = [standardlized_for_avro(doc, collection) for doc in data_list]
 
-    df = standardlized_for_parquet(df)
+    # Lấy và parse Schema
+    schema = SCHEMAS.get(collection)
+    parsed_schema = fastavro.parse_schema(schema)
 
-    df.to_parquet(local_filename, engine='pyarrow', index=False)
+    # Ghi file Avro
+    with open(local_filename, 'wb') as output:
+        fastavro.writer(output, parsed_schema, processed_data)
 
     # Upload lên GCS
-    gcs_dest = f"raw/{collection}/{filename}"
+    gcs_dest = f"raw_layer/{collection}/{filename}"
     blob = bucket.blob(gcs_dest)
 
     logging.info(f"Đang upload Part {part_number} (Kích thước: {len(data_list)} dòng)...")
