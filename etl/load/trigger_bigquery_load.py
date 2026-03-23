@@ -5,9 +5,9 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-DATASET = "raw_layer"
+DATASET = "raw_layer_avro"
 
-# 1. Khởi tạo đối tượng BigQuery Client
+# Khởi tạo đối tượng BigQuery Client
 try:
     # Kết nối với BigQuery xác thực bằng file json gcp_key
     client = bigquery.Client()
@@ -23,16 +23,16 @@ def trigger_bigquery_load(cloud_event):
 
     bucket_name = data["bucket"]
 
-    # Lấy đầy đủ đường dẫn file (raw/raw_data/raw_data_part_xx.parquet)
+    # Lấy đầy đủ đường dẫn file (raw_layer/raw_data/raw_data_part_xx.avro)
     path_name = data["name"]
 
-    if not path_name.endswith(".parquet"):
-        logging.info("Skipping BigQuery load as it is not a parquet")
+    if not path_name.endswith(".avro"):
+        logging.info("Skipping BigQuery load as it is not an avro file")
         return
 
     try:
         # 2. Start BigQuery load job
-        # Lấy filename chuẩn (VD:raw_data_part_xx.parquet)
+        # Lấy filename chuẩn (VD:raw_data_part_xx.avro)
         file_name = path_name.split("/")[-1]
 
         # Lấy tên collection
@@ -40,38 +40,32 @@ def trigger_bigquery_load(cloud_event):
 
         logging.info(f"\n========== ĐANG LOAD DỮ LIỆU BẢNG: {collection.upper()} ==========")
 
-        # Đường dẫn Nguồn: Trỏ đến file parquet vừa kích hoạt trigger
+        # Đường dẫn Nguồn: Trỏ đến file avro vừa kích hoạt trigger
         gcs_uri = f"gs://{bucket_name}/{path_name}"
 
         # Đường dẫn Đích
         target_table = f"{client.project}.{DATASET}.{collection}"
 
-        # Bảng tạm lấy tên là: raw_data_staging_part_xx
-        temp_table_name = file_name.replace('_part_', '_temp_part_').replace('.parquet', '')
+        # Bảng tạm lấy tên là: raw_data_temp_part_xx
+        temp_table_name = file_name.replace('_part_', '_temp_part_').replace('.avro', '')
         temp_table = f"{client.project}.{DATASET}.{temp_table_name}"
 
         # Kiểm tra có phải lần đầu load dữ liệu vào Bảng đích không
         try:
-            target_table_ref = client.get_table(target_table)
-            target_schema = target_table_ref.schema
+            # Chỉ check xem bảng có tồn tại không
+            client.get_table(target_table)
             is_first_load = False
-            logging.info(f"Bảng đích đã tồn tại. Sẽ ép kiểu dữ liệu theo bảng đích.")
+            logging.info(f"Bảng đích đã tồn tại. Chuẩn bị chạy lệnh MERGE.")
         except NotFound:
-            target_schema = None
             is_first_load = True
-            logging.info(f"Bảng đích chưa tồn tại. Sẽ tự động nhận diện kiểu dữ liệu.")
+            logging.info(f"Bảng đích chưa tồn tại. Sẽ tự động CREATE TABLE từ file Avro.")
 
         # Tạo LoadJob config
         job_config = bigquery.LoadJobConfig(
-            source_format=bigquery.SourceFormat.PARQUET,
-            write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE # Tạo dữ liệu bảng temp mới
+            source_format=bigquery.SourceFormat.AVRO,
+            write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE, # Tạo dữ liệu bảng temp mới
+            use_avro_logical_types=True # Đảm bảo parse chuẩn ngày tháng/số nguyên từ Avro
         )
-
-        # Nếu không phải lần đầu, ép Schema của bảng tạm y hệt bảng đích
-        if not is_first_load:
-            job_config.schema = target_schema
-        else:
-            job_config.autodetect = True
 
         logging.info(f"Đang nạp {file_name} vào bảng đệm {temp_table}...")
 
@@ -93,13 +87,13 @@ def trigger_bigquery_load(cloud_event):
             query_job = client.query(create_query)
             query_job.result()
         else:
-            logging.info("Đang đối chiếu _id và merge dữ liệu 2 bảng ...")
+            logging.info("Đang đối chiếu mongo_id và merge dữ liệu 2 bảng ...")
 
             # Xử lý upsert dữ liệu giữa bảng đã tồn tại và dữ liệu mới chuẩn đi được thêm vào
             merge_query = f"""
                         MERGE `{target_table}` tgt
                         USING `{temp_table}` tmp
-                        ON tgt._id = tmp._id
+                        ON tgt.mongo_id = tmp.mongo_id
                         WHEN NOT MATCHED THEN
                           INSERT ROW """
 
