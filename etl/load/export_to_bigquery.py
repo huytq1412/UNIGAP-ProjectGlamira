@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import time
 
 COLLECTIONS = ["product_names", "raw_data", "ip_locations"]
-DATASET = "raw_layer"
+DATASET = "raw_layer_avro"
 
 # Cấu hình Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -64,17 +64,18 @@ def export_to_bigquery():
     for collection in COLLECTIONS:
         logging.info(f"\n========== ĐANG LOAD DỮ LIỆU BẢNG: {collection.upper()} ==========")
 
-        # Đường dẫn Nguồn: Trỏ đến toàn bộ file parquet của bảng tương ứng trên GCS
-        gcs_uri = f"gs://{bucket_name}/raw/{collection}/*.parquet"
+        # Đường dẫn Nguồn: Trỏ đến toàn bộ file avro của bảng tương ứng trên GCS
+        gcs_uri = f"gs://{bucket_name}/raw_layer/{collection}/*.avro"
 
         # Đường dẫn Đích
         table = f"{client.project}.{DATASET}.{collection}"
 
         # Tạo LoadJob config
         job_config = bigquery.LoadJobConfig(
-            source_format=bigquery.SourceFormat.PARQUET,
+            source_format=bigquery.SourceFormat.AVRO,
             write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE, # Xóa bảng cũ, đè dữ liệu mới
-            autodetect=True
+            autodetect=True,
+            use_avro_logical_types=True
         )
 
         try:
