@@ -1,6 +1,6 @@
 WITH source AS (
   SELECT ip, country_short, country_long, region, city
-  FROM {{ source('raw_layer', 'ip_locations') }}
+  FROM {{ source('raw_layer_avro', 'ip_locations') }}
   WHERE ip IS NOT NULL
 )
 SELECT 

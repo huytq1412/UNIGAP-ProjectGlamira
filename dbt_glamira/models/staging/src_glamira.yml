@@ -1,10 +1,10 @@
 version: 2
 
 sources:
-  - name: raw_layer                   # Tên source
+  - name: raw_layer_avro              # Tên source
     description: "Dataset chứa dữ liệu thô từ Project Glamira"
     database: unigap-glamira-project  # Trỏ vào Project ID
-    schema: raw_layer                 # Trỏ vào Dataset
+    schema: raw_layer_avro            # Trỏ vào Dataset
     tables:
       - name: raw_data
         description: "Bảng lưu trữ hành vi người dùng"

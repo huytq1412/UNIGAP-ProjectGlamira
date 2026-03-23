@@ -121,6 +121,7 @@ SELECT
     -- Quy ước: USD là đơn vị tiền tệ chung. Lấy sales_amount gốc * với tỷ giá để ra USD
     ,CAST(f.sales_price * COALESCE(e.exchange_rate, 1.0) AS NUMERIC) AS sales_price_usd
     ,CAST(f.sales_amount * COALESCE(e.exchange_rate, 1.0) AS NUMERIC) AS sales_amount_usd
+    ,f.options_description
 FROM fact_sales AS f
     LEFT JOIN dim_product AS p ON f.product_key = p.product_key
     LEFT JOIN dim_location AS l ON f.location_key = l.location_key

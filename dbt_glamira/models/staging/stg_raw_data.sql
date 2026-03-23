@@ -20,12 +20,12 @@ WITH source AS (
             store_id,
             email_address,
             cart_products
-      FROM {{ source('raw_layer', 'raw_data') }}
+      FROM {{ source('raw_layer_avro', 'raw_data') }}
       WHERE collection = 'checkout_success' AND order_id IS NOT NULL
 
       -- Chỉ lấy dữ liệu của ngày hôm qua và hôm nay
       {% if is_incremental() %}
-        AND DATE(TIMESTAMP_SECONDS(CAST(time_stamp AS INT64))) >= DATE_SUB((SELECT MAX(order_date) FROM {{ this }}), INTERVAL 1 DAY)
+        AND DATE(TIMESTAMP_SECONDS(time_stamp)) >= DATE_SUB((SELECT MAX(order_date) FROM {{ this }}), INTERVAL 1 DAY)
       {% endif %}
 ),
 unnested AS (
@@ -39,23 +39,24 @@ unnested AS (
             ,cat_id
             ,store_id
             ,email_address
-            ,JSON_VALUE(product, '$.product_id') AS product_id
-            ,JSON_VALUE(product, '$.amount') AS quantity
-            ,JSON_VALUE(product, '$.currency') AS currency
-            ,JSON_QUERY(product, '$.option') AS options_list    
+            ,product.product_id AS product_id
+            ,product.amount AS quantity
+            ,product.currency AS currency
+            ,product.option AS options_list   
             -- Xử lý làm sạch giá tiền bằng 2 nhóm Regex độc lập:
             -- Nhóm 1 (Bên trong): Xóa sạch các ký tự rác (như ', khoảng trắng, -, _)
             -- Nhóm 2 (Bọc ngoài): Đổi các dấu thập phân lạ (như ٫) thành dấu chấm (.)
-            ,REGEXP_REPLACE(REGEXP_REPLACE(JSON_VALUE(product, '$.price'), r"[' \-_]", ""), r"[٫]", ".") AS clean_price_str
+            ,REGEXP_REPLACE(REGEXP_REPLACE(product.price, r"[' \-_]", ""), r"[٫]", ".") AS clean_price_str
       FROM source
-      CROSS JOIN UNNEST(JSON_QUERY_ARRAY(cart_products)) AS product
+      -- Sử dụng LEFT JOIN UNNEST nguyên bản của BigQuery
+      LEFT JOIN UNNEST(cart_products) AS product
 )
 
 SELECT 
       SPLIT(order_id, '.')[OFFSET(0)] AS order_id
-      ,TIMESTAMP_SECONDS(CAST(time_stamp AS INT64)) AS order_timestamp
+      ,TIMESTAMP_SECONDS(time_stamp) AS order_timestamp
       ,CAST(local_time AS DATETIME) AS order_local_datetime
-      ,DATE(TIMESTAMP_SECONDS(CAST(time_stamp AS INT64))) AS order_date
+      ,DATE(TIMESTAMP_SECONDS(time_stamp)) AS order_date
       ,ip AS ip_address
       ,user_id
       ,device_id
@@ -76,6 +77,10 @@ SELECT
             REPLACE(clean_price_str, ',', '')
         END 
         AS NUMERIC) AS sales_price
-      ,NULLIF(TRIM(currency), '') AS currency
+      ,CASE 
+        -- Gom đơn vị USD $ về chung thành $
+        WHEN TRIM(currency) = 'USD $' THEN '$' 
+        ELSE NULLIF(TRIM(currency), '') 
+      END AS currency
       ,options_list
 FROM unnested

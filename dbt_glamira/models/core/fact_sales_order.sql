@@ -64,8 +64,8 @@ SELECT
     {{ dbt_utils.generate_surrogate_key([
         'order_id', 
         'product_id', 
-        'CAST(options_list AS STRING)', 
-        'CAST(ROW_NUMBER() OVER(PARTITION BY order_id, product_id, CAST(options_list AS STRING) ORDER BY order_timestamp) AS STRING)'
+        'TO_JSON_STRING(options_list)', 
+        'CAST(ROW_NUMBER() OVER(PARTITION BY order_id, product_id, TO_JSON_STRING(options_list) ORDER BY order_timestamp) AS STRING)'
     ]) }} AS sales_order_key
     -- 2. Foreign Keys 
     ,CAST(FORMAT_DATE('%Y%m%d', order_date) AS INT64) AS date_key
