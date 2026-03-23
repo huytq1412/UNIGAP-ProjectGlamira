@@ -3,7 +3,7 @@
 ## Giới thiệu dự án
 * Project Glamira là một Data Pipeline (ELT) hoàn chỉnh được thiết kế để tự động hóa việc trích xuất (Extract), biến đổi (Transform) và tải (Load) dữ liệu hành vi người dùng và thông tin sản phẩm từ hệ thống. 
 
-* Dự án không chỉ sở hữu module Crawler với cơ chế Anti-Bot mạnh mẽ và khả năng tự động ghi nhớ tiến trình (Checkpoint), mà còn mở rộng khả năng xử lý dữ liệu lớn bằng cách chuẩn hóa định dạng Parquet, tích hợp lưu trữ trên Google Cloud Storage (GCS) và xây dựng Data Warehouse tại Google BigQuery để sẵn sàng cho các bài toán phân tích. 
+* Dự án không chỉ sở hữu module Crawler với cơ chế Anti-Bot mạnh mẽ và khả năng tự động ghi nhớ tiến trình (Checkpoint), mà còn mở rộng khả năng xử lý dữ liệu lớn bằng cách chuẩn hóa định dạng avro, tích hợp lưu trữ trên Google Cloud Storage (GCS) và xây dựng Data Warehouse tại Google BigQuery để sẵn sàng cho các bài toán phân tích. 
 * Ngoài ra dự án còn sử dụng dbt (data build tool) để thiết kế mô hình dữ liệu Star Schema, và được trực quan hóa thành các báo cáo tương tác chuyên sâu trên Looker Studio.
 ---
 ## BI Dashboards
@@ -49,7 +49,7 @@ UNIGAP-ProjectGlamira/
 │       │   ├── error_404_productid.txt  # Log ID sản phẩm bị lỗi 404
 │       │   ├── success_productid.txt    # Log ID sản phẩm đã crawl thành công (Checkpoint)
 │       │   └── product_names.csv        # File CSV backup/log kết quả crawl
-│       └── parquet_result/          # Dữ liệu đã chuyển đổi sang định dạng Parquet
+│       └── avro_result/          # Dữ liệu đã chuyển đổi sang định dạng avro
 │           └── checkpoints/         # Dữ liệu checkpoint để export dữ liệu
 ├── dbt_glamira/                     # Thư mục chứa toàn bộ xử lý Data Modeling (dbt)
 ├── etl/
@@ -59,7 +59,7 @@ UNIGAP-ProjectGlamira/
 │   ├── load/
 │   │   ├── __init__.py
 │   │   ├── export_to_bigquery.py    # Xử lý load data từ GCS vào BigQuery
-│   │   ├── export_to_gcs.py         # Upload file Parquet lên Data Lake (GCS)
+│   │   ├── export_to_gcs.py         # Upload file avro lên Data Lake (GCS)
 │   │   └── trigger_bigquery_load.py # Trigger kích hoạt tiến trình Load từ GCS vào BigQuery
 │   └── transform/
 │       ├── __init__.py
@@ -105,7 +105,7 @@ UNIGAP-ProjectGlamira/
 
 5. Data Export & Cloud Integration (GCS & BigQuery):
 
-* Data Lake (GCS): `export_to_gcs.py` tự động hóa việc đẩy các file Parquet đã chuẩn hóa lên kho lưu trữ đám mây.
+* Data Lake (GCS): `export_to_gcs.py` tự động hóa việc đẩy các file avro đã chuẩn hóa lên kho lưu trữ đám mây.
 
 * Data Warehouse (BigQuery): Các script `export_to_bigquery.py` và `trigger_bigquery_load.py` đảm nhiệm việc định nghĩa schema và load dữ liệu từ GCS vào BigQuery, sẵn sàng cho phân tích.
 
@@ -158,8 +158,8 @@ IP_DATA_PATH = "UNIGAP-ProjectGlamira/data/raw/ip_data/IP-COUNTRY-REGION-CITY.BI
 SUCCESS_FILE_PATH = 'UNIGAP-ProjectGlamira/data/processed/crawl_result/success_productid.txt'
 ERROR_404_FILE_PATH = 'UNIGAP-ProjectGlamira/data/processed/crawl_result/error_404_productid.txt'
 
-#Parquet file path
-PARQUET_PATH = 'UNIGAP-ProjectGlamira/data/processed/parquet_result'
+#Avro file path
+AVRO_PATH = 'UNIGAP-ProjectGlamira/data/processed/avro_result'
 
 #GCP config
 BUCKET_NAME = 'your_bucket'
@@ -245,10 +245,10 @@ poetry run python -m etl.load.export_to_bigquery
 rm data/processed/crawl_result/*
 ```
 
-* Nếu bạn muốn chạy lại dữ liệu đẩy lên GCS từ con số 0, hãy xóa các file checkpoint trong thư mục processed/parquet_result/checkpoints:
+* Nếu bạn muốn chạy lại dữ liệu đẩy lên GCS từ con số 0, hãy xóa các file checkpoint trong thư mục processed/avro_result/checkpoints:
 
 ```
-rm data/processed/parquet_result/checkpoints/*
+rm data/processed/avro_result/checkpoints/*
 ```
 ---
 

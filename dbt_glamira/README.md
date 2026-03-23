@@ -11,7 +11,7 @@ Nhiệm vụ của module này là thực hiện bước **Transform (T)** trong
 dbt_glamira/
 ├── models/
 │   ├── staging/                    # Lớp staging: Chứa các view làm sạch dữ liệu thô (đổi tên cột, ép kiểu dữ liệu). Tỉ lệ 1:1 với dữ liệu gốc.
-│   │   ├── src_glamira.yml         # Khai báo mapping với dataset raw_layer trên BigQuery
+│   │   ├── src_glamira.yml         # Khai báo mapping với dataset raw_layer_avro trên BigQuery
 │   │   └── stg_config.yml          # Khai báo mô tả và unit test cho lớp staging
 │   ├── core/                       # Lớp core: Chứa các bảng dim, fact kết nối logic nghiệp vụ, xử lý tính toán phức tạp.
 │   │   └── core_config.yml            # Khai báo mô tả và unit test cho lớp core
@@ -34,7 +34,7 @@ dbt_glamira/
 Mô hình dữ liệu được chia thành 3 lớp (layer) vật lý nghiêm ngặt, được cấu hình tự động phân luồng schema thông qua macro `generate_schema_name`:
 
 ### 1. Lớp Staging (`schema: staging` | `materialized: view`)
-Lớp tiền xử lý, đóng vai trò trích xuất và làm sạch dữ liệu từ nguồn gốc (`raw_layer`).
+Lớp tiền xử lý, đóng vai trò trích xuất và làm sạch dữ liệu từ nguồn gốc (`raw_layer_avro`).
 * **`stg_raw_data`:** Cốt lõi của hệ thống. 
   * Xử lý Unnest mảng JSON phức tạp (`cart_products`).
   * **Business Logic:** Chuẩn hóa cột giá tiền (`price`) bằng Regex (loại bỏ ký tự rác, đồng nhất dấu thập phân `.` và `,`) để ép kiểu về `NUMERIC` an toàn.
