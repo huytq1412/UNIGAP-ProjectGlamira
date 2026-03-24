@@ -116,6 +116,7 @@ SELECT
     -- ==========================================
     ,f.order_qty
     ,f.currency_code
+    ,e.is_current
     ,CAST(f.sales_price AS NUMERIC)AS sales_price_original
     ,CAST(f.sales_amount AS NUMERIC) AS sales_amount_original
     -- Quy ước: USD là đơn vị tiền tệ chung. Lấy sales_amount gốc * với tỷ giá để ra USD
@@ -131,4 +132,4 @@ FROM fact_sales AS f
         ON f.currency_code = e.currency_code
         -- order_date của giao dịch phải nằm trong khoảng hiệu lực của tỷ giá
         AND f.order_date >= e.valid_from 
-        AND f.order_date < COALESCE(e.valid_to, CAST('9999-12-31' AS DATE))
+        AND f.order_date < e.valid_to

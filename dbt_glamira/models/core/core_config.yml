@@ -21,6 +21,13 @@ models:
           - not_null
           - unique
 
+      - name: currency_code
+        data_tests:
+          - unique:
+              config:
+                where: "is_current = true"
+              description: "Đảm bảo mỗi mã tiền tệ chỉ có duy nhất một dòng đang có hiệu lực"
+              
   - name: dim_location
     description: "Bảng danh mục vị trí địa lý"
     columns:

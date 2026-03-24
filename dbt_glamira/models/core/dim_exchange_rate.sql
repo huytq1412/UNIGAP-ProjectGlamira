@@ -20,5 +20,4 @@ SELECT
         WHEN valid_to IS NULL THEN TRUE 
         ELSE FALSE 
     END AS is_current
-
 FROM stg_rate
