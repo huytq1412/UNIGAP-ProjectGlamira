@@ -1,4 +1,4 @@
-WITH stg_rate AS (
+WITH dim_exchange_rate__source AS (
     SELECT 
         currency_code
         ,exchange_rate
@@ -20,4 +20,4 @@ SELECT
         WHEN valid_to IS NULL THEN TRUE 
         ELSE FALSE 
     END AS is_current
-FROM stg_rate
+FROM dim_exchange_rate__source

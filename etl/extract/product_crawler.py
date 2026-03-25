@@ -118,7 +118,7 @@ def get_product(existing_products_set, existing_403_set):
             url = doc.get('current_url')
 
             # Kiểm tra và bỏ qua URL test ngay từ đầu
-            if url and ("stage.glamira" in str(url) or "test.glamira" in str(url)):
+            if url and ("stage.glamira" in str(url) or "test.glamira" in str(url) or "file://" in str(url)):
                 continue
 
             # LỌC CHECKPOINT: Bỏ qua nếu đã có trong file success productid
@@ -152,8 +152,8 @@ def get_product(existing_products_set, existing_403_set):
             url = doc.get('referrer_url')
 
             # Kiểm tra và bỏ qua URL test ngay từ đầu
-            # if url and ("stage.glamira" in str(url) or "test.glamira" in str(url)):
-            #     continue
+            if url and ("stage.glamira" in str(url) or "test.glamira" in str(url) or "file://" in str(url)):
+                continue
 
             # LỌC CHECKPOINT: Bỏ qua nếu đã có trong file success productid
             if product_id and product_id in existing_products_set:

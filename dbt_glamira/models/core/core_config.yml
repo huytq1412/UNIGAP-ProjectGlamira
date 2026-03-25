@@ -4,14 +4,6 @@ models:
   # ==========================================
   # DIMENSION TABLES
   # ==========================================
-  
-  - name: dim_customer
-    description: "Bảng danh mục khách hàng"
-    columns:
-      - name: customer_key
-        data_tests:
-          - not_null
-          - unique
 
   - name: dim_exchange_rate
     description: "Bảng tỷ giá hối đoái"
@@ -55,7 +47,6 @@ models:
   # ==========================================
   # FACT TABLE
   # ==========================================
-  
   - name: fact_sales_order
     description: "Bảng lưu trữ chi tiết từng sản phẩm trong đơn hàng"
     columns:
@@ -77,7 +68,7 @@ models:
           - not_null
           - relationships:
               arguments:
-                to: ref('dim_customer')
+                to: ref('snap_dim_customer')
                 field: customer_key
 
       - name: location_key

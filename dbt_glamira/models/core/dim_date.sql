@@ -1,4 +1,4 @@
-WITH date_array AS (
+WITH dim_date__source AS (
     SELECT dt
     FROM UNNEST(GENERATE_DATE_ARRAY('2020-01-01', '2030-12-31', INTERVAL 1 DAY)) AS dt
 )
@@ -23,4 +23,4 @@ SELECT
         WHEN dt = CURRENT_DATE() THEN TRUE 
         ELSE FALSE 
     END AS is_today
-FROM date_array
+FROM dim_date__source

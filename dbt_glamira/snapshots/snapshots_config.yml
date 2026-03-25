@@ -1,0 +1,22 @@
+version: 2
+
+snapshots:
+  - name: snap_dim_customer
+    description: "SCD Type 2 snapshot theo dõi thay đổi thông tin khách hàng dựa trên user_id và device_id"
+    columns:
+      # Cột do dbt TỰ ĐỘNG SINH RA
+      - name: dbt_scd_id
+        description: "Khóa chính duy nhất cho mỗi bản ghi lịch sử do dbt tạo ra"
+        tests:
+          - unique
+          - not_null
+
+      - name: customer_key
+        description: "Surrogate key tạo từ user_id và device_id"
+        tests:
+          - not_null
+
+      - name: last_updated_at
+        description: "Thời gian update cuối cùng"
+        tests:
+          - not_null

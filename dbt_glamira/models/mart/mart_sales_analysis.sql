@@ -9,7 +9,7 @@
     incremental_strategy='insert_overwrite'
 ) }}
 
-WITH fact_sales AS (
+WITH mart_sales_analysis__sales AS (
     SELECT 
         sales_order_key
         ,date_key
@@ -26,14 +26,13 @@ WITH fact_sales AS (
         ,sales_price
         ,sales_amount
         ,currency_code 
-        ,options_description
     FROM {{ ref('fact_sales_order') }}
     {% if is_incremental() %}
         WHERE order_date >= DATE_SUB((SELECT MAX(order_date) FROM {{ this }}), INTERVAL 1 DAY)
     {% endif %}
 ),
 
-dim_product AS (
+mart_sales_analysis__product AS (
     SELECT 
         product_key
         ,product_id
@@ -41,7 +40,7 @@ dim_product AS (
     FROM {{ ref('dim_product') }}
 ),
 
-dim_location AS (
+mart_sales_analysis__location AS (
     SELECT 
         location_key
         ,country_code
@@ -51,7 +50,7 @@ dim_location AS (
     FROM {{ ref('dim_location') }}
 ),
 
-dim_exchange_rate AS (
+mart_sales_analysis__exchange_rate AS (
     SELECT 
         exchange_rate_key
         ,currency_code
@@ -62,7 +61,7 @@ dim_exchange_rate AS (
     FROM {{ ref('dim_exchange_rate') }}
 ),
 
-dim_date AS (
+mart_sales_analysis__date AS (
     SELECT 
         date_key
         ,year
@@ -122,13 +121,12 @@ SELECT
     -- Quy ước: USD là đơn vị tiền tệ chung. Lấy sales_amount gốc * với tỷ giá để ra USD
     ,CAST(f.sales_price * COALESCE(e.exchange_rate, 1.0) AS NUMERIC) AS sales_price_usd
     ,CAST(f.sales_amount * COALESCE(e.exchange_rate, 1.0) AS NUMERIC) AS sales_amount_usd
-    ,f.options_description
-FROM fact_sales AS f
-    LEFT JOIN dim_product AS p ON f.product_key = p.product_key
-    LEFT JOIN dim_location AS l ON f.location_key = l.location_key
+FROM mart_sales_analysis__sales AS f
+    LEFT JOIN mart_sales_analysis__product AS p ON f.product_key = p.product_key
+    LEFT JOIN mart_sales_analysis__location AS l ON f.location_key = l.location_key
     -- BỔ SUNG JOIN VỚI BẢNG dim_date
-    LEFT JOIN dim_date AS dt ON f.date_key = dt.date_key
-    LEFT JOIN dim_exchange_rate AS e 
+    LEFT JOIN mart_sales_analysis__date AS dt ON f.date_key = dt.date_key
+    LEFT JOIN mart_sales_analysis__exchange_rate AS e 
         ON f.currency_code = e.currency_code
         -- order_date của giao dịch phải nằm trong khoảng hiệu lực của tỷ giá
         AND f.order_date >= e.valid_from 

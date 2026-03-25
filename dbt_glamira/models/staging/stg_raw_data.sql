@@ -8,7 +8,7 @@
     incremental_strategy='insert_overwrite'
 ) }}
 
-WITH source AS (
+WITH stg_raw_data__source AS (
       SELECT 
             order_id,
             time_stamp,
@@ -28,7 +28,7 @@ WITH source AS (
         AND DATE(TIMESTAMP_SECONDS(time_stamp)) >= DATE_SUB((SELECT MAX(order_date) FROM {{ this }}), INTERVAL 1 DAY)
       {% endif %}
 ),
-unnested AS (
+stg_raw_data__unnested AS (
       SELECT 
             order_id
             ,time_stamp
@@ -47,7 +47,7 @@ unnested AS (
             -- Nhóm 1 (Bên trong): Xóa sạch các ký tự rác (như ', khoảng trắng, -, _)
             -- Nhóm 2 (Bọc ngoài): Đổi các dấu thập phân lạ (như ٫) thành dấu chấm (.)
             ,REGEXP_REPLACE(REGEXP_REPLACE(product.price, r"[' \-_]", ""), r"[٫]", ".") AS clean_price_str
-      FROM source
+      FROM stg_raw_data__source
       -- Sử dụng LEFT JOIN UNNEST nguyên bản của BigQuery
       LEFT JOIN UNNEST(cart_products) AS product
 )
@@ -83,4 +83,4 @@ SELECT
         ELSE NULLIF(TRIM(currency), '') 
       END AS currency
       ,options_list
-FROM unnested
+FROM stg_raw_data__unnested

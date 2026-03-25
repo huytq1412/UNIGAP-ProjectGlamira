@@ -9,7 +9,7 @@
     incremental_strategy='insert_overwrite'
 ) }}
 
-WITH stg_raw AS (
+WITH fact_sales_order__raw AS (
     SELECT 
         order_id
         ,product_id
@@ -31,7 +31,6 @@ WITH stg_raw AS (
             -- Nếu cả order không có currency -> đưa về loại 'Unknown'
             ,'Unknown'
         ) AS currency_code
-        ,options_list
     FROM {{ ref('stg_raw_data') }}
     -- Lưới lọc Incremental: Cắt đúng phân vùng cần thiết để xử lý
     {% if is_incremental() %}
@@ -39,39 +38,37 @@ WITH stg_raw AS (
     {% endif %}
 ),
 
-ip_mapping AS (
+fact_sales_order__ip_mapping AS (
     SELECT 
         ip_address
-        ,MAX(country_code) AS country_code
-        ,MAX(region_name) AS region_name
-        ,MAX(city_name) AS city_name
+        ,MAX(location_key) AS location_key
     FROM {{ ref('stg_ip_locations') }}
     GROUP BY ip_address
 ),
 
-mapped_raw AS (
+fact_sales_order__mapped AS (
     SELECT 
         r.*
-        ,COALESCE(m.country_code, 'Unknown') AS loc_country_code
-        ,COALESCE(m.region_name, 'Unknown') AS loc_region_name
-        ,COALESCE(m.city_name, 'Unknown') AS loc_city_name
-    FROM stg_raw AS r
-        LEFT JOIN ip_mapping AS m ON r.ip_address = m.ip_address
+        ,m.location_key
+    FROM fact_sales_order__raw AS r
+        LEFT JOIN fact_sales_order__ip_mapping AS m ON r.ip_address = m.ip_address
 )
 
 SELECT 
     -- 1. Primary Key 
     {{ dbt_utils.generate_surrogate_key([
         'order_id', 
-        'product_id', 
-        'TO_JSON_STRING(options_list)', 
-        'CAST(ROW_NUMBER() OVER(PARTITION BY order_id, product_id, TO_JSON_STRING(options_list) ORDER BY order_timestamp) AS STRING)'
+        'COALESCE(CAST(product_id AS STRING), \'-1\')', 
+        'CAST(ROW_NUMBER() OVER(PARTITION BY order_id, COALESCE(CAST(product_id AS STRING), \'-1\') ORDER BY order_timestamp) AS STRING)'
     ]) }} AS sales_order_key
     -- 2. Foreign Keys 
-    ,CAST(FORMAT_DATE('%Y%m%d', order_date) AS INT64) AS date_key
-    ,{{ dbt_utils.generate_surrogate_key(['product_id']) }} AS product_key
-    ,{{ dbt_utils.generate_surrogate_key(['user_id', 'device_id']) }} AS customer_key
-    ,{{ dbt_utils.generate_surrogate_key(['loc_country_code', 'loc_region_name', 'loc_city_name']) }} AS location_key   
+    ,CAST(FORMAT_DATE('%Y%m%d', order_date) AS INT64) AS date_key 
+    -- XỬ LÝ DEFAULT VALUE: Nếu thiếu product_id, ép về '-1' để JOIN khớp với dòng Default trong dim_product
+    ,{{ dbt_utils.generate_surrogate_key(['COALESCE(CAST(product_id AS STRING), \'-1\')']) }} AS product_key
+    -- XỬ LÝ DEFAULT VALUE: Nếu thiếu user/device, ép về '-1' để JOIN khớp với snap_dim_Customer
+    ,{{ dbt_utils.generate_surrogate_key(['COALESCE(CAST(user_id AS STRING), \'-1\')', 'COALESCE(CAST(device_id AS STRING), \'-1\')']) }} AS customer_key
+    -- XỬ LÝ DEFAULT VALUE: Nếu không map được IP, ép về  'Unknown để JOIN khớp với dim_location
+    ,COALESCE(location_key, {{ dbt_utils.generate_surrogate_key(["'Unknown'", "'Unknown'", "'Unknown'"]) }}) AS location_key
     -- 3. Natural Keys
     ,order_id  
     ,cat_id
@@ -86,6 +83,5 @@ SELECT
     ,COALESCE(sales_price, 0) * order_qty AS sales_amount
     -- 6. Descriptive Attributes
     ,currency_code 
-    ,options_list AS options_description
-FROM mapped_raw
+FROM fact_sales_order__mapped
 WHERE order_qty > 0
