@@ -14,14 +14,16 @@ dbt_glamira/
 │   │   ├── src_glamira.yml         # Khai báo mapping với dataset raw_layer_avro trên BigQuery
 │   │   └── stg_config.yml          # Khai báo mô tả và unit test cho lớp staging
 │   ├── core/                       # Lớp core: Chứa các bảng dim, fact kết nối logic nghiệp vụ, xử lý tính toán phức tạp.
-│   │   └── core_config.yml            # Khai báo mô tả và unit test cho lớp core
+│   │   └── core_config.yml         # Khai báo mô tả và unit test cho lớp core
 │   └── mart/                       # Lớp mart: Chứa các bảng tổng hợp sẵn sàng đẩy lên BI Tool/Looker để làm báo cáo.
-│       └── mart_config.yml            # Khai báo mô tả và unit test cho lớp mart
+│       └── mart_config.yml         # Khai báo mô tả và unit test cho lớp mart
 ├── macros/                         # Chứa các đoạn code Jinja/SQL tái sử dụng được nhiều lần.
 │   └── generate_schema_name.sql    # Macro cấu hình tự động chia layer staging/core/mart thành các dataset riêng biệt trên BigQuery. 
 ├── tests/                          # Chứa các Unit Test tự định nghĩa để kiểm tra chất lượng dữ liệu.
 ├── seeds/                          # Chứa các file .csv dạng mapping tĩnh.
 │   └── exchange_rates.csv          # File mapping tĩnh chứa tỉ giá tiền tệ
+├── snapshots/                      # Chứa các định nghĩa Snapshot để theo dõi lịch sử (SCD Type 2)
+│   └── snapshots_config.yml        # Khai báo mô tả và unit test cho snapshot
 ├── dbt_project.yml                 # File chứa thông tin định tuyến cấu hình của dự án.
 ├── packages.yml                    # Nơi khai báo các thư viện bổ trợ của dbt.
 ├── package-lock.yml                # File khóa phiên bản thư viện (dbt tự sinh ra sau khi chạy lệnh dbt deps).
@@ -60,6 +62,13 @@ Lớp Data Mart phục vụ trực tiếp cho báo cáo.
   * Công thức tính: Doanh thu gốc (`sales_amount`) nhân (`*`) với tỷ giá (`exchange_rate`).
   * **Logic Map Tỷ giá:** Tỷ giá được lấy linh hoạt dựa trên ngày thực hiện đơn hàng (`order_date` nằm giữa `valid_from` và `valid_to` của đồng tiền tương ứng).
 
+### 4. Lớp Snapshot (schema: snapshots | materialized: snapshot)
+Lớp này ứng dụng cơ chế SCD Type 2 (Slowly Changing Dimension) để không chỉ lưu trạng thái hiện tại mà còn lưu lại toàn bộ lịch sử thay đổi của thực thể.
+
+* **`snap_dim_customer`:** Theo dõi biến động thông tin khách hàng dựa trên định danh kép.
+  * Cơ chế định danh: Sử dụng Surrogate Key (customer_key) được tạo từ tổ hợp user_id và device_id.
+  * Chiến lược: Sử dụng timestamp dựa trên cột last_updated_at (thời điểm phát sinh giao dịch cuối cùng của khách hàng đó).
+  * Dữ liệu đầu ra: Bổ sung các cột kỹ thuật của dbt (dbt_scd_id, dbt_valid_from, dbt_valid_to) để phục vụ truy vấn dữ liệu tại một thời điểm bất kỳ trong quá khứ.
 ---
 ## Hướng dẫn cài đặt
 1. Yêu cầu hệ thống
@@ -109,13 +118,19 @@ Nạp file exchange_rates.csv vào BigQuery
 dbt seed
 ```
 
-**Bước 3: Biên dịch và chạy Models**
+**Bước 3: Khởi tạo và cập nhật Snapshot**
+Khởi tạo và cập nhật toàn bộ model Snapshot
+```
+dbt snapshot
+```
+
+**Bước 4: Biên dịch và chạy Models**
 Chạy toàn bộ pipeline từ Staging -> Core -> Mart.
 ```
 dbt run
 ```
 
-**Bước 4: Kiểm thử dữ liệu**
+**Bước 5: Kiểm thử dữ liệu**
 Kiểm tra các ràng buộc Not Null, Unique và Referential Integrity (Khóa ngoại) đã định nghĩa trong các file _config.yml
 ```
 dbt test
