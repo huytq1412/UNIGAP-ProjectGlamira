@@ -1,7 +1,7 @@
-# Project Glamira ELT Pipeline
+# Project E-Commerce ELT Pipeline
 
 ## Giới thiệu dự án
-* Project Glamira là một Data Pipeline (ELT) hoàn chỉnh được thiết kế để tự động hóa việc trích xuất (Extract), biến đổi (Transform) và tải (Load) dữ liệu hành vi người dùng và thông tin sản phẩm từ hệ thống. 
+* Project E-Commerce ELT Pipeline là một Data Pipeline (ELT) cho công ty e-commerce Glamira hoàn chỉnh được thiết kế để tự động hóa việc trích xuất (Extract), biến đổi (Transform) và tải (Load) dữ liệu hành vi người dùng và thông tin sản phẩm từ hệ thống. 
 
 * Dự án không chỉ sở hữu module Crawler với cơ chế Anti-Bot mạnh mẽ và khả năng tự động ghi nhớ tiến trình (Checkpoint), mà còn mở rộng khả năng xử lý dữ liệu lớn bằng cách chuẩn hóa định dạng avro, tích hợp lưu trữ trên Google Cloud Storage (GCS) và xây dựng Data Warehouse tại Google BigQuery để sẵn sàng cho các bài toán phân tích. 
 * Ngoài ra dự án còn sử dụng dbt (data build tool) để thiết kế mô hình dữ liệu Star Schema, và được trực quan hóa thành các báo cáo tương tác chuyên sâu trên Looker Studio.
@@ -38,7 +38,7 @@ Kết quả đầu ra của Data Pipeline là bộ Dashboard phân tích toàn d
 ## Cấu trúc thư mục 
 
 ```text
-UNIGAP-ProjectGlamira/
+ecommerce-ELT-pipeline/
 ├── config/
 │   ├── __init__.py
 │   └── get_mongo_connection.py      # Thiết lập kết nối đến MongoDB
@@ -149,22 +149,22 @@ MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/
 DB_NAME='your_db'
 
 # Đường dẫn lưu file log
-PRODUCT_NAME_PATH='UNIGAP-ProjectGlamira/data/processed/crawl_result/product_names.csv'
+PRODUCT_NAME_PATH='ecommerce-ELT-pipeline/data/processed/crawl_result/product_names.csv'
 
 # IP data path
-IP_DATA_PATH = "UNIGAP-ProjectGlamira/data/raw/ip_data/IP-COUNTRY-REGION-CITY.BIN"
+IP_DATA_PATH = "ecommerce-ELT-pipeline/data/raw/ip_data/IP-COUNTRY-REGION-CITY.BIN"
 
 #Checkpoint file path
-SUCCESS_FILE_PATH = 'UNIGAP-ProjectGlamira/data/processed/crawl_result/success_productid.txt'
-ERROR_404_FILE_PATH = 'UNIGAP-ProjectGlamira/data/processed/crawl_result/error_404_productid.txt'
+SUCCESS_FILE_PATH = 'ecommerce-ELT-pipeline/data/processed/crawl_result/success_productid.txt'
+ERROR_404_FILE_PATH = 'ecommerce-ELT-pipeline/data/processed/crawl_result/error_404_productid.txt'
 
 #Avro file path
-AVRO_PATH = 'UNIGAP-ProjectGlamira/data/processed/avro_result'
+AVRO_PATH = 'ecommerce-ELT-pipeline/data/processed/avro_result'
 
 #GCP config
 BUCKET_NAME = 'your_bucket'
 #GCP key file path (delete if running on VM)
-#GCP_KEY_FILE_PATH = 'UNIGAP-ProjectGlamira/data/gcp_key/gcp_key.json'
+#GCP_KEY_FILE_PATH = 'ecommerce-ELT-pipeline/data/gcp_key/gcp_key.json'
 ```
 
 4. Cấu hình Proxy (Bắt buộc khi chạy trên Cloud)
