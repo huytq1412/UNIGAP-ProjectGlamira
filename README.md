@@ -1,272 +1,262 @@
 # Project E-Commerce ELT Pipeline
 
-## Giới thiệu dự án
-* Project E-Commerce ELT Pipeline là một Data Pipeline (ELT) cho công ty e-commerce Glamira hoàn chỉnh được thiết kế để tự động hóa việc trích xuất (Extract), biến đổi (Transform) và tải (Load) dữ liệu hành vi người dùng và thông tin sản phẩm từ hệ thống. 
+## Project Overview
+* The E-Commerce ELT Pipeline is a comprehensive Data Pipeline (ELT) designed for the e-commerce company Glamira to automate the Extraction, Transformation, and Loading of user behavioral data and product information from their systems. 
 
-* Dự án không chỉ sở hữu module Crawler với cơ chế Anti-Bot mạnh mẽ và khả năng tự động ghi nhớ tiến trình (Checkpoint), mà còn mở rộng khả năng xử lý dữ liệu lớn bằng cách chuẩn hóa định dạng avro, tích hợp lưu trữ trên Google Cloud Storage (GCS) và xây dựng Data Warehouse tại Google BigQuery để sẵn sàng cho các bài toán phân tích. 
-* Ngoài ra dự án còn sử dụng dbt (data build tool) để thiết kế mô hình dữ liệu Star Schema, và được trực quan hóa thành các báo cáo tương tác chuyên sâu trên Looker Studio.
+* The project not only features a Crawler module equipped with robust Anti-Bot mechanisms and automated Checkpointing capabilities but also expands its big data processing capacity by standardizing to the Avro format, integrating with Google Cloud Storage (GCS) as a Data Lake, and building a Data Warehouse in Google BigQuery to support analytical workloads. 
+* Furthermore, the project utilizes dbt (data build tool) to design a Star Schema data model, which is then visualized into in-depth interactive reports on Looker Studio.
 ---
 ## BI Dashboards
-Kết quả đầu ra của Data Pipeline là bộ Dashboard phân tích toàn diện hành vi mua sắm và hiệu suất kinh doanh của Glamira trên nhiều khía cạnh khác nhau.
+The final output of this Data Pipeline is a suite of comprehensive Dashboards that analyze shopping behavior and Glamira's business performance across multiple dimensions.
 
-**[Truy cập dashboard tại đây](https://lookerstudio.google.com/reporting/5ec34374-165a-4891-b14d-b1acec65298c/page/t4asF)**
+**[Access the dashboard here](https://lookerstudio.google.com/reporting/5ec34374-165a-4891-b14d-b1acec65298c/page/t4asF)**
 
-### 1. Phân tích Tổng quan Doanh thu (Revenue Analysis)
-* **Mục tiêu:** Đánh giá bức tranh tài chính tổng thể và các nhân tố đóng góp doanh thu chính.
-* **Business Insights:** Theo dõi các chỉ số cốt lõi (Doanh thu, Số lượng đơn, AOV) theo thời gian thực/sản phẩm. Bóc tách tỷ trọng doanh thu giữa ngày thường và cuối tuần để phân tích hành vi mua sắm. Đồng thời nhận diện và theo dõi danh sách các đơn hàng có giá trị đột biến thông qua bảng xếp hạng Top Orders.
-* **Hình ảnh báo cáo:**
+### 1. Revenue Analysis
+* **Objective:** Evaluate the overall financial picture and key revenue drivers.
+* **Business Insights:** Track core metrics (Revenue, Order Count, AOV) across time and products. Breakdown revenue distribution between weekdays and weekends to analyze shopping behavior. Additionally, identify and monitor high-value outlier orders via the Top Orders leaderboard.
+* **Report Snapshot:**
 ![Revenue Analysis](assets/revenue_analysis.png)
 
-### 2. Phân bổ Địa lý (Geographic Distribution)
-* **Mục tiêu:** Xác định các thị trường "Bò sữa" (Cash Cow) và đánh giá độ phủ sóng toàn cầu.
-* **Business Insights:** Trực quan hóa dòng doanh thu trên bản đồ thế giới (Geo Map) kết hợp tính năng Drill-down từ cấp độ Quốc gia xuống từng Thành phố. Cho phép các nhà quản lý vùng (Regional Managers) so sánh chéo hiệu suất, số lượng đơn hàng và giá trị trung bình đơn (AOV) giữa các khu vực chiến lược.
-* **Hình ảnh báo cáo:**
+### 2. Geographic Distribution
+* **Objective:** Identify "Cash Cow" markets and evaluate global market penetration.
+* **Business Insights:** Visualize revenue streams on a global Geo Map, integrated with Drill-down capabilities from the Country level down to individual Cities. Enables Regional Managers to cross-compare performance, order volume, and Average Order Value (AOV) across strategic territories.
+* **Report Snapshot:**
 ![Geographic Distribution](assets/geographic_distribution.png)
 
-### 3. Phân tích Xu hướng Thời gian (Time-based Trends)
-* **Mục tiêu:** Theo dõi tiến độ hoàn thành mục tiêu (Run-rate) và thói quen mua sắm chi tiết.
-* **Business Insights:** Cung cấp góc nhìn toàn cảnh về tốc độ tăng trưởng dòng tiền thông qua biểu đồ doanh thu lũy kế. Tích hợp Table with heatmap theo Ngày/Giờ nhằm xác định "Khung giờ vàng" chốt đơn, hỗ trợ đắc lực cho team Marketing phân bổ ngân sách chạy Ads và tung các chiến dịch Flash Sale.
-* **Hình ảnh báo cáo:**
+### 3. Time-based Trends
+* **Objective:** Track goal completion progress (Run-rate) and detailed shopping patterns.
+* **Business Insights:** Provide a holistic view of cash flow growth velocity through cumulative revenue charts. Integrates a Day/Hour heatmap table to pinpoint "Golden Hours" for closing sales, heavily supporting the Marketing team in allocating Ad budgets and launching Flash Sale campaigns.
+* **Report Snapshot:**
 ![Time-based Trends](assets/timebased_trends.png)
 
-### 4. Hiệu suất Sản phẩm (Product Performance)
-* **Mục tiêu:** Bóc tách danh mục sản phẩm, xác định rổ hàng hóa cốt lõi để tối ưu chiến lược Tồn kho & Đẩy số.
-* **Business Insights:** Ứng dụng biểu đồ phân tán để xác định hiệu suất sản phẩm nhằm phân loại rõ ràng sản phẩm "hot" và sản phẩm ít hiệu quả. Theo dõi danh sách Top các sản phẩm mang lại doanh thu cao nhất, kết hợp bảng thống kê chi tiết để đánh giá sức mua thực tế của từng sản phẩm.
-* **Hình ảnh báo cáo:**
+### 4. Product Performance
+* **Objective:** Dissect the product portfolio to determine the core basket of goods for optimizing Inventory & Sales Push strategies.
+* **Business Insights:** Apply scatter plots to evaluate product performance, clearly classifying "hot" products versus underperforming ones. Monitor the list of Top Revenue-Generating Products combined with detailed statistical tables to assess the actual purchasing power of each product.
+* **Report Snapshot:**
 ![Product Performance](assets/product_performance.png)
 ---
-## Cấu trúc thư mục 
+## Directory Structure
 
 ```text
 ecommerce-ELT-pipeline/
-├── config/
-│   ├── __init__.py
-│   └── get_mongo_connection.py      # Thiết lập kết nối đến MongoDB
-├── data/
-│   ├── raw/                         # Dữ liệu gốc (chưa xử lý)
-│   └── processed/                   # Dữ liệu xuất ra và file Checkpoint
-│       ├── crawl_result/
-│       │   ├── error_404_productid.txt  # Log ID sản phẩm bị lỗi 404
-│       │   ├── success_productid.txt    # Log ID sản phẩm đã crawl thành công (Checkpoint)
-│       │   └── product_names.csv        # File CSV backup/log kết quả crawl
-│       └── avro_result/          # Dữ liệu đã chuyển đổi sang định dạng avro
-│           └── checkpoints/         # Dữ liệu checkpoint để export dữ liệu
-├── dbt_glamira/                     # Thư mục chứa toàn bộ xử lý Data Modeling (dbt)
-├── etl/
-│   ├── extract/
-│   │   ├── __init__.py
-│   │   ├── product_crawler.py       # Script crawl tên sản phẩm 
-│   ├── load/
-│   │   ├── __init__.py
-│   │   ├── export_to_bigquery.py    # Xử lý load data từ GCS vào BigQuery
-│   │   ├── export_to_gcs.py         # Upload file avro lên Data Lake (GCS)
-│   │   └── trigger_bigquery_load.py # Trigger kích hoạt tiến trình Load từ GCS vào BigQuery
-│   └── transform/
-│       ├── __init__.py
-│       └── ip_processing.py         # Script xử lý chuẩn hóa IP người dùng
-├── src/                             # Các module tiện ích bổ trợ
-│   ├── __init__.py
-│   ├── checkpoint_manager.py        # Quản lý đọc/ghi Checkpoint
-│   ├── get_data_from_env.py         
-├── tests/                           # Monitoring & Testing Data                  
-│   ├── __init__.py
-│   └── raw_data_profiling.sql       # Script SQL chạy profiling trên BigQuery
-├── .env                             # File chứa biến môi trường
-├── .gitignore                       # File bỏ qua các file không cần push lên Git
-├── poetry.lock                      # Khóa phiên bản các thư viện dependencies
-├── pyproject.toml                   # Cấu hình dự án & danh sách thư viện (Poetry)
-└── README.md                        # Tài liệu dự án
+    ├── config/
+    │   ├── __init__.py
+    │   └── get_mongo_connection.py      # Establishes connection to MongoDB
+    ├── data/
+    │   ├── raw/                         # Raw data (unprocessed)
+    │   └── processed/                   # Output data and Checkpoint files
+    │       ├── crawl_result/
+    │       │   ├── error_404_productid.txt  # Log of Product IDs resulting in 404 errors
+    │       │   ├── success_productid.txt    # Log of successfully crawled Product IDs (Checkpoint)
+    │       │   └── product_names.csv        # CSV backup/log of crawl results
+    │       └── avro_result/             # Data transformed into Avro format
+    │           └── checkpoints/         # Checkpoint data for export processes
+    ├── dbt_glamira/                     # Directory containing all Data Modeling logic (dbt)
+    ├── etl/
+    │   ├── extract/
+    │   │   ├── __init__.py
+    │   │   ├── product_crawler.py       # Script to crawl product names 
+    │   ├── load/
+    │   │   ├── __init__.py
+    │   │   ├── export_to_bigquery.py    # Handles loading data from GCS to BigQuery
+    │   │   ├── export_to_gcs.py         # Uploads Avro files to the Data Lake (GCS)
+    │   │   └── trigger_bigquery_load.py # Trigger to initiate the Load process from GCS to BigQuery
+    │   └── transform/
+    │       ├── __init__.py
+    │       └── ip_processing.py         # Script to standardize user IPs
+    ├── src/                             # Auxiliary utility modules
+    │   ├── __init__.py
+    │   ├── checkpoint_manager.py        # Manages reading/writing Checkpoints
+    │   ├── get_data_from_env.py         
+    ├── tests/                           # Data Monitoring & Testing                  
+    │   ├── __init__.py
+    │   └── raw_data_profiling.sql       # SQL script to run profiling on BigQuery
+    ├── .env                             # File containing environment variables
+    ├── .gitignore                       # Files to ignore when pushing to Git
+    ├── poetry.lock                      # Dependency versions lock file
+    ├── pyproject.toml                   # Project configuration & library list (Poetry)
+    └── README.md                        # Project documentation
 ```
 
 ---
 
-## Tính năng nổi bật
-1. Cơ chế Anti-Bot & Vượt Tường Lửa (Bypass 403/429):
+## Key Features
+1. Anti-Bot & Firewall Bypass Mechanisms (Bypass 403/429):
 
-* Giả lập TLS Fingerprint thông qua thư viện curl_cffi (đóng giả Chrome, Edge, Safari).
+* Spoof TLS Fingerprints via the `curl_cffi` library (impersonating Chrome, Edge, Safari).
 
-* Tích hợp mạng lưới Proxy (từ webshare.io) để xoay vòng IP, tránh bị block IP khi chạy trên máy ảo GCP.
+* Integrate a Proxy network (via webshare.io) for IP rotation to prevent IP blocking when running on GCP Virtual Machines.
 
-2. Quản lý Tiến trình Thông minh (Checkpointing):
+2. Intelligent Process Management (Checkpointing):
 
-* Sử dụng phương pháp checkpoint để lưu trữ trạng thái các ID dữ liệu đã xử lý vào data/processed/. Nếu script bị ngắt giữa chừng (do cúp điện, rớt mạng), lần chạy sau sẽ tự động bỏ qua các ID đã làm xong, tiết kiệm tối đa thời gian.
+* Implement a checkpointing method to store the status of processed data IDs in `data/processed/`. If the script is interrupted (due to power loss, network drop), the subsequent run will automatically skip completed IDs, maximizing time efficiency.
 
-3. Xử lý & Chuẩn hóa Vị trí IP (IP Processing):
+3. IP Location Processing & Standardization:
 
-* Tích hợp thư viện IP2Location và quét file .BIN cục bộ để giải mã nhanh vị trí (Quốc gia, Vùng, Thành phố) mà không cần gọi API bên ngoài.
+* Integrate the IP2Location library and scan local .BIN files to rapidly decode locations (Country, Region, City) without external API calls.
 
-* Data Quality Control: Tự động lọc bỏ các IP không hợp lệ, thiếu thông tin vị trí (-, n/a, N/A).
+* Data Quality Control: Automatically filter out invalid IPs or those lacking location data (-, n/a, N/A).
 
-4. Tối ưu hóa Database (MongoDB):
+4. Database Optimization (MongoDB):
 
-* Phân lô dữ liệu tự động (Cursor Batching) giới hạn batch_size(1000) giúp xử lý mượt mà hàng chục ngàn bản ghi mà không bị lỗi.
+* Automatic data batching (Cursor Batching) limited by batch_size(1000) ensures smooth processing of tens of thousands of records without crashing.
 
-* Hỗ trợ Compound Indexes giúp tăng tốc độ truy vấn data từ raw_data.
+* Leverage Compound Indexes to accelerate data queries from `raw_data`.
 
 5. Data Export & Cloud Integration (GCS & BigQuery):
 
-* Data Lake (GCS): `export_to_gcs.py` tự động hóa việc đẩy các file avro đã chuẩn hóa lên kho lưu trữ đám mây.
+* Data Lake (GCS): `export_to_gcs.py` automates the upload of standardized Avro files to cloud storage.
 
-* Data Warehouse (BigQuery): Các script `export_to_bigquery.py` và `trigger_bigquery_load.py` đảm nhiệm việc định nghĩa schema và load dữ liệu từ GCS vào BigQuery, sẵn sàng cho phân tích.
+* Data Warehouse (BigQuery): The `export_to_bigquery.py` and `trigger_bigquery_load.py` scripts handle schema definition and load data from GCS into BigQuery, making it analytics-ready.
 
 6. Testing & Data Monitoring:
 
-* Bổ sung các script SQL để kiểm tra, thống kê chất lượng dữ liệu đẩy vào BigQuery
+* Add SQL scripts to test and profile the quality of data loaded into BigQuery.
 
-* Sử dụng raw_data_profiling.sql để thực hiện Data Profiling trực tiếp trên BigQuery, đánh giá tính toàn vẹn và phân phối của dữ liệu sau khi load.
+* Use `raw_data_profiling.sql` to execute Data Profiling directly within BigQuery to evaluate data integrity and distribution post-load.
 
 7. Data Modeling & Analytics (dbt & Looker):
 
-* Ứng dụng dbt trực tiếp trên BigQuery để chuyển đổi dữ liệu thô thành Data Mart, tối ưu hóa chi phí truy vấn.
+* Apply dbt directly on top of BigQuery to transform raw data into a Data Mart, optimizing query costs.
 
-* Cung cấp Dashboard tương tác thời gian thực với các bộ lọc Cross-filtering mạnh mẽ.
+* Provide real-time interactive Dashboards with powerful Cross-filtering capabilities.
 ---
 
-## Hướng dẫn cài đặt
-1. Yêu cầu hệ thống
-* Hệ điều hành: Linux (Ubuntu/Debian) hoặc MacOS.
-
+## Setup & Configuration
+1. System Requirements
+* Operating System: Linux (Ubuntu/Debian) or MacOS.
 * Python: >= 3.10
-
 * Package Manager: Poetry
 
-2. Cài đặt môi trường ảo và thư viện
-Dự án sử dụng Poetry để quản lý thư viện chặt chẽ. Cài đặt các dependencies bằng lệnh sau:
-
+2. Install Virtual Environment and Dependencies
+* The project uses Poetry for strict dependency management. Install the dependencies using the following commands:
 ```
-# Ép Poetry tạo thư mục .venv ngay bên trong thư mục dự án
+# Force Poetry to create the .venv directory inside the project root
 poetry config virtualenvs.in-project true
 
-# Cài đặt toàn bộ thư viện từ file pyproject.toml
+# Install all libraries from the pyproject.toml file
 poetry install
 ```
-3. Cấu hình biến môi trường (.env)
-* Tạo một file .env ở thư mục gốc của dự án và khai báo các thông số sau:
-
+3. Environment Variable Configuration (.env)
+* Create a `.env` file in the root directory and declare the following parameters:
 ```
-# Cấu hình MongoDB
+# MongoDB Configuration
 MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/
 DB_NAME='your_db'
 
-# Đường dẫn lưu file log
+# Log file path
 PRODUCT_NAME_PATH='ecommerce-ELT-pipeline/data/processed/crawl_result/product_names.csv'
 
 # IP data path
 IP_DATA_PATH = "ecommerce-ELT-pipeline/data/raw/ip_data/IP-COUNTRY-REGION-CITY.BIN"
 
-#Checkpoint file path
+# Checkpoint file path
 SUCCESS_FILE_PATH = 'ecommerce-ELT-pipeline/data/processed/crawl_result/success_productid.txt'
 ERROR_404_FILE_PATH = 'ecommerce-ELT-pipeline/data/processed/crawl_result/error_404_productid.txt'
 
-#Avro file path
+# Avro file path
 AVRO_PATH = 'ecommerce-ELT-pipeline/data/processed/avro_result'
 
-#GCP config
+# GCP config
 BUCKET_NAME = 'your_bucket'
-#GCP key file path (delete if running on VM)
-#GCP_KEY_FILE_PATH = 'ecommerce-ELT-pipeline/data/gcp_key/gcp_key.json'
+# GCP key file path (delete if running on VM)
+# GCP_KEY_FILE_PATH = 'ecommerce-ELT-pipeline/data/gcp_key/gcp_key.json'
 ```
 
-4. Cấu hình Proxy (Bắt buộc khi chạy trên Cloud)
-* Mở file etl/extract/product_crawler.py, tìm đến list proxy_list và cập nhật danh sách proxy của bạn (VD: từ Webshare) theo định dạng:
-_http://username:password@ip_address:port_
+4. Proxy Configuration (Required when running on the Cloud)
+* Open the `etl/extract/product_crawler.py` file, locate the `proxy_list`, and update it with your proxy list (e.g., from Webshare) in the following format: *http://username:password@ip_address:port*
  
-5. Ủy quyền GCP:
-* Trong trường hợp chạy từ local: Đảm bảo đã tải file JSON Service Account từ Google Cloud Console và đặt vào thư mục data/gcp_key/. Phân quyền Storage Object Admin và BigQuery Data Editor cho Service Account này.
-* Trong trường hợp chạy trên VM của GCP: Đảm bảo VM được sử dụng Service account có quyền Storage Object Admin và BigQuery Data Editor và Access scopes chọn option Allow full access to all Cloud APIs
+5. GCP Authorization:
+* If running locally: Ensure you have downloaded the Service Account JSON file from the Google Cloud Console and placed it in the `data/gcp_key/` directory. Grant 'Storage Object Admin' and 'BigQuery Data Editor' roles to this Service Account.
+* If running on a GCP VM: Ensure the VM uses a Service Account with 'Storage Object Admin' and 'BigQuery Data Editor' roles, and select the "Allow full access to all Cloud APIs" option for Access scopes.
 
-6. Setup các models dbt:
-* Xem thêm file dbt_glamira/README.md để biết cách setup các models dbt
+6. Setup dbt Models:
+* Refer to the `dbt_glamira/README.md` file for instructions on setting up dbt models.
 ---
 
-## Hướng dẫn chạy Script
-1. Chạy Crawler thu thập tên sản phẩm
-* Để chạy kịch bản cào dữ liệu, hãy đứng ở thư mục gốc của dự án và sử dụng lệnh poetry run:
-
+## Execution Guide
+1. Run Crawler to Collect Product Names
+* To execute the web scraping script, navigate to the project's root directory and run via poetry:
 ```
 poetry run python -m etl.extract.product_crawler
 ```
+* Script Workflow:
 
-* Luồng hoạt động của Script:
+  * Connects to MongoDB and retrieves the total number of IDs to crawl from the `raw_data` table.
 
-  * Kết nối MongoDB, lấy ra tổng số ID cần crawl từ bảng raw_data.
+  * Cross-references with `success_productid.txt` to exclude already completed IDs.
 
-  * Đối chiếu với file success_productid.txt để loại trừ các ID đã hoàn thành.
+  * Divides tasks into small batches and utilizes Multi-threading combined with Proxy rotation.
 
-  * Chia lô nhỏ (Batch) và gọi đa luồng (Multi-threading) kết hợp với xoay vòng Proxy.
+  * Processes HTML parsing logic to extract product names.
 
-  * Xử lý logic bóc tách HTML để lấy tên sản phẩm.
+  * Logs statuses in real-time to text files (Checkpointing), writes logs to a CSV, and saves cleaned data into the `product_names` Collection in MongoDB.
 
-  * Ghi realtime trạng thái vào file text (Checkpoint), ghi log vào file CSV và lưu data sạch vào Collection product_names trong MongoDB.
-
-2. Chạy Transform xử lý định vị IP
-* Để chạy kịch bản xử lý định vị IP, hãy đứng ở thư mục gốc của dự án và sử dụng lệnh poetry run:
-
+2. Run Transform for IP Location Processing
+* To execute the IP localization script, navigate to the project's root directory and run via poetry:
 ```
 poetry run python -m etl.transform.ip_processing
 ```
 
-* Luồng hoạt động của Script:
+* Script Workflow:
 
-  * Quét collection raw_data và sử dụng Pipeline Aggregation để gom nhóm các IP duy nhất (Unique IPs).
+  * Scans the `raw_data` collection and uses a Pipeline Aggregation to group Unique IPs.
 
-  * Load database cục bộ .BIN của IP2Location.
+  * Loads the local IP2Location `.BIN` database.
 
-  * Tiến hành đối chiếu, chuẩn hóa Data Quality (loại bỏ dữ liệu rác, thiếu thông tin).
+  * Performs matching and standardizes Data Quality (removing junk data and missing information).
 
-  * Lưu đồng loạt (Bulk Insert) dữ liệu sạch vào collection ip_locations.
+  * Executes a Bulk Insert of the cleaned data into the `ip_locations` collection.
 
-3. Chuyển đổi dữ liệu và đẩy lên GCS
-* Để chạy kịch bản đẩy dữ liệu lên GCS, hãy đứng ở thư mục gốc của dự án và sử dụng lệnh poetry run:
+3. Transform and Export Data to GCS
+* To execute the script for uploading data to GCS, navigate to the project's root directory and run via poetry:
 ```
 poetry run python -m etl.load.export_to_gcs
 ```
 
-4. Load dữ liệu từ GCS vào BigQuery
-* Để chạy kịch bản load dữ liệu từ GCS vào BigQuery, hãy đứng ở thư mục gốc của dự án và sử dụng lệnh poetry run:
+4. Load Data from GCS into BigQuery
+* To execute the script for loading data from GCS to BigQuery, navigate to the project's root directory and run via poetry:
 ```
 poetry run python -m etl.load.export_to_bigquery
 ```
 
-5. Trigger auto load dữ liệu từ GCS vào BigQuery
-* Để chạy kịch bản load dữ liệu từ GCS vào BigQuery, hãy sử dụng Cloud run function và deploy script `trigger_bigquery_load.py`
+5. Trigger Automated GCS to BigQuery Load
+* To execute the script for loading data from GCS to BigQuery, utilize Cloud Run functions and deploy the `trigger_bigquery_load.py` script.
 
-6. Kiểm tra chất lượng dữ liệu trên BigQuery
-* Copy nội dung file `tests/raw_data_profiling.sql`và chạy trên giao diện BigQuery Workspace để xem các chỉ số thống kê về Null, Duplicates, và phân phối dữ liệu.
+6. Data Quality Checks on BigQuery
+* Copy the content of the `tests/raw_data_profiling.sql` file and execute it in the BigQuery Workspace UI to view statistical metrics regarding Nulls, Duplicates, and data distribution.
 
-7. Chạy các models dbt:
-* Xem thêm file dbt_glamira/README.md để biết cách chạy các models dbt
+7. Run dbt Models:
+* Refer to the `dbt_glamira/README.md` file for instructions on running dbt models.
 ---
 
-## Quản lý dữ liệu log (Reset tiến trình)
-* Nếu bạn muốn chạy lại dữ liệu crawl từ con số 0, hãy xóa các file checkpoint trong thư mục processed/crawl_result:
-
+## Log Data Management (Process Reset)
+* If you wish to restart the crawl process from scratch, delete the checkpoint files in the `processed/crawl_result` directory:
 ```
 rm data/processed/crawl_result/*
 ```
 
-* Nếu bạn muốn chạy lại dữ liệu đẩy lên GCS từ con số 0, hãy xóa các file checkpoint trong thư mục processed/avro_result/checkpoints:
-
+* If you wish to restart the GCS export process from scratch, delete the checkpoint files in the `processed/avro_result/checkpoints` directory:
 ```
 rm data/processed/avro_result/checkpoints/*
 ```
 ---
 
-## Hạn chế hiện tại (Limitations)
+## Current Limitations
 
-Dù đã được tối ưu hóa, dự án hiện tại vẫn còn một số giới hạn nhất định:
-1. **Phụ thuộc vào Proxy miễn phí:** Do sử dụng gói Proxy Datacenter miễn phí (Webshare), tiến trình Crawler bị giới hạn băng thông. Nếu crawl dữ liệu lớn, hệ thống sẽ trả về lỗi `402 Payment Required`.
-2. **Độ nhạy cảm với cấu trúc HTML:** Logic bóc tách tên sản phẩm phụ thuộc vào cấu trúc thẻ HTML hiện tại của website (VD: `h1.page-title span`, thẻ `meta og:title`). Nếu phía website thay đổi giao diện, hàm BeautifulSoup có thể sẽ không bắt được dữ liệu.
-3. **Dữ liệu IP tĩnh:** Module IP Processing đang sử dụng file Database cục bộ (`.BIN`). Nếu không tải bản cập nhật mới thường xuyên, một số dải IP mới cấp phát có thể không được nhận diện chính xác.
-4. **Thiếu tính năng Tự động hóa & Lập lịch:** Hiện tại, Pipeline vẫn đang được kích hoạt thủ công thông qua các lệnh terminal trên máy ảo.
+Despite optimizations, the project currently has certain constraints:
+1. **Reliance on Free Proxies:** Due to using a free Datacenter Proxy tier (Webshare), the Crawler's bandwidth is throttled. When scraping large volumes of data, the system may return a `402 Payment Required` error.
+2. **Sensitivity to HTML Structure:** The product name parsing logic is tightly coupled to the website's current HTML structure (e.g., `h1.page-title span`, `meta og:title` tags). If the website updates its UI, the BeautifulSoup functions may fail to capture the data.
+3. **Static IP Data:** The IP Processing module relies on a local Database file (`.BIN`). Without frequent updates, newly allocated IP ranges might not be accurately identified.
+4. **Lack of Automation & Scheduling:** Currently, the Pipeline is triggered manually via terminal commands on a Virtual Machine.
 
 ---
 
-## Định hướng cải tiến (Future Roadmap)
+## Future Roadmap
 
-Để biến dự án thành một hệ thống Data Platform cấp độ doanh nghiệp (Enterprise-level), dưới đây là các bước cải tiến tiếp theo:
+To evolve this project into an Enterprise-level Data Platform, the following improvement steps are planned:
 
-1. **Nâng cấp hạ tầng Proxy:** Chuyển đổi sang các dịch vụ Rotating Residential Proxy trả phí (như BrightData, SmartProxy) hoặc các API Scraping chuyên dụng để tăng tốc độ crawl (lên 50-100 luồng) và tránh hoàn toàn lỗi 402/403.
-2. **Tự động hóa toàn phần:** Đưa toàn bộ các script này vào các tool xử lý chạy tự động (Apache Airflow, ...) (thay vì chạy bash script/cronjob) để quản lý luồng chạy tự động theo ngày/tuần, tự động retry khi lỗi pipeline.
-3. **Hệ thống Cảnh báo (Alerting):** Tích hợp webhook (Discord/Telegram) để tự động gửi tin báo cáo tình hình xử lý lỗi
-4. **Ứng dụng Serverless (Cloud Run):** Đóng gói các module ETL thành các Docker Container và triển khai lên Google Cloud Run.
+1. **Proxy Infrastructure Upgrade:** Transition to paid Rotating Residential Proxy services (e.g., BrightData, SmartProxy) or specialized Scraping APIs to boost crawl speeds (to 50-100 concurrent threads) and completely bypass 402/403 errors.
+2. **Full Automation:** Migrate these scripts into workflow orchestration tools (like Apache Airflow) rather than relying on bash scripts/cronjobs to manage automated daily/weekly pipelines and handle automatic retries upon failure.
+3. **Alerting System:** Integrate webhooks (Discord/Telegram) to automatically dispatch reports on error handling statuses.
+4. **Serverless Deployment (Cloud Run):** Package ETL modules into Docker Containers and deploy them onto Google Cloud Run.
