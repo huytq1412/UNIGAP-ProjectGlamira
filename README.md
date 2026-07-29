@@ -7,7 +7,7 @@
 * Furthermore, the project utilizes dbt (data build tool) to design a Star Schema data model, which is then visualized into in-depth interactive reports on Looker Studio.
 ---
 ## Kiến trúc tổng quan
-![Overall Architecture](assets/Ecommerce ELT pipeline.png)
+![Overall Architecture](assets/Ecommerce_ELT_pipeline.png)
 
 The project's architecture is designed according to modern **ELT (Extract, Load, Transform)** standards, leveraging the computing power of the Cloud Data Warehouse. The data flow is divided into the following main stages:
 
