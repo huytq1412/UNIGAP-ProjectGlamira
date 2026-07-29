@@ -33,6 +33,8 @@ dbt_glamira/
 ---
 
 ## Data Architecture
+![Table Diagram](assets/core_table_diagram.png)
+
 The data model is strictly divided into 3 physical layers, with automated schema routing configured via the `generate_schema_name` macro:
 
 ### 1. Staging Layer (`schema: staging` | `materialized: view`)
@@ -69,6 +71,7 @@ This layer utilizes the SCD Type 2 (Slowly Changing Dimension) mechanism to not 
   * Identification Mechanism: Uses a Surrogate Key (`customer_key`) generated from a combination of `user_id` and `device_id`.
   * Strategy: Uses a timestamp based on the `last_updated_at` column (the time of the customer's last transaction).
   * Output Data: Appends dbt technical columns (`dbt_scd_id`, `dbt_valid_from`, `dbt_valid_to`) to facilitate querying data at any given point in the past.
+
 ---
 ## Installation Guide
 1. System Requirements
