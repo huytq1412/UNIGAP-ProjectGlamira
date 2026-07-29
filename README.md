@@ -36,6 +36,12 @@ The project's architecture is designed according to modern **ELT (Extract, Load,
 *   **Python & Cron Job:** The entire data lifecycle (from running the Crawler, uploading files to GCS, to triggering dbt models) is automatically scheduled and monitored via Python scripts combined with OS-level Cron Jobs, ensuring a seamless and uninterrupted pipeline execution.
 
 ---
+## Data Architecture
+The official Data Warehouse layer, designed according to the **Star Schema** model.
+For more information, follow `dbt_glamira/` folder
+![Table Diagram](assets/core_table_diagram.png)
+
+---
 ## BI Dashboards
 The final output of this Data Pipeline is a suite of comprehensive Dashboards that analyze shopping behavior and Glamira's business performance across multiple dimensions.
 
