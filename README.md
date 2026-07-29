@@ -6,6 +6,36 @@
 * The project not only features a Crawler module equipped with robust Anti-Bot mechanisms and automated Checkpointing capabilities but also expands its big data processing capacity by standardizing to the Avro format, integrating with Google Cloud Storage (GCS) as a Data Lake, and building a Data Warehouse in Google BigQuery to support analytical workloads. 
 * Furthermore, the project utilizes dbt (data build tool) to design a Star Schema data model, which is then visualized into in-depth interactive reports on Looker Studio.
 ---
+## Kiến trúc tổng quan
+![Overall Architecture](assets/Ecommerce ELT pipeline.png)
+
+The project's architecture is designed according to modern **ELT (Extract, Load, Transform)** standards, leveraging the computing power of the Cloud Data Warehouse. The data flow is divided into the following main stages:
+
+**1. Data Extraction**
+*   **Web Crawler & API:** A custom-built Python Crawler system automatically collects user behavioral data and product information from websites/APIs.
+*   **IP2Location:** Integrates the IP2Location dataset to enrich the data, mapping user IPs to specific geographic information (Country, City).
+*   **MongoDB (Operational DB):** All collected raw data is temporarily stored in MongoDB. It acts as a Backend database providing flexible support for JSON/NoSQL data structures.
+
+**2. Batch Ingestion & Data Lake**
+*   Data from MongoDB is periodically extracted (Batch Ingestion), standardized into the **Avro** format (optimizing storage size and preserving the schema), and uploaded to **Google Cloud Storage (GCS)**. GCS serves as the Data Lake, providing cost-effective historical data storage.
+
+**3. Trigger & Data Loading**
+*   **Cloud Functions / Data Transfer Service:** Acts as an automated bridge. Upon the arrival of new data in GCS, the system triggers the loading process, ingesting this data chunk directly into the **Landing Area** of **Google BigQuery**.
+
+**4. Transformation & Data Modeling (with dbt)**
+*   Instead of external processing, the entire Transformation process is executed in-place within BigQuery utilizing SQL power, orchestrated by **dbt (data build tool)**. The data flows through 4 standard layers:
+    *   `Landing`: Raw data freshly ingested from GCS.
+    *   `Staging`: Cleanses data, handles null values, and standardizes data types.
+    *   `Core`: Constructs the Data Model following the **Star Schema** standard (Fact & Dimension tables).
+    *   `Mart`: The Aggregated data layer, specifically tailored to address distinct business use cases and reporting needs.
+
+**5. Reporting & Visualization**
+*   **Looker Studio:** Connects directly to the `Mart` layer in BigQuery to generate real-time interactive BI Dashboards, providing actionable insights into revenue and customer behavior.
+
+**6. Workflow Orchestration**
+*   **Python & Cron Job:** The entire data lifecycle (from running the Crawler, uploading files to GCS, to triggering dbt models) is automatically scheduled and monitored via Python scripts combined with OS-level Cron Jobs, ensuring a seamless and uninterrupted pipeline execution.
+
+---
 ## BI Dashboards
 The final output of this Data Pipeline is a suite of comprehensive Dashboards that analyze shopping behavior and Glamira's business performance across multiple dimensions.
 
