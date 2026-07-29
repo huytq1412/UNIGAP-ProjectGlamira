@@ -33,7 +33,7 @@ dbt_glamira/
 ---
 
 ## Data Architecture
-![Table Diagram](assets/core_table_diagram.png)
+![Table Diagram](../assets/core_table_diagram.png)
 
 The data model is strictly divided into 3 physical layers, with automated schema routing configured via the `generate_schema_name` macro:
 
