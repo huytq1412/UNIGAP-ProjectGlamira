@@ -6,7 +6,7 @@
 * The project not only features a Crawler module equipped with robust Anti-Bot mechanisms and automated Checkpointing capabilities but also expands its big data processing capacity by standardizing to the Avro format, integrating with Google Cloud Storage (GCS) as a Data Lake, and building a Data Warehouse in Google BigQuery to support analytical workloads. 
 * Furthermore, the project utilizes dbt (data build tool) to design a Star Schema data model, which is then visualized into in-depth interactive reports on Looker Studio.
 ---
-## Kiến trúc tổng quan
+## Overall Architecture
 ![Overall Architecture](assets/Ecommerce_ELT_pipeline.png)
 
 The project's architecture is designed according to modern **ELT (Extract, Load, Transform)** standards, leveraging the computing power of the Cloud Data Warehouse. The data flow is divided into the following main stages:
